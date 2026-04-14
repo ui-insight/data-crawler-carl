@@ -380,8 +380,6 @@ export function createCSVExplorer(containerEl, options) {
     containerEl.querySelectorAll('.eda-preset').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var idx = parseInt(btn.dataset.idx);
-        btn.classList.add('used');
-        btn.disabled = true;
         sendMessage(activePresets[idx].text);
       });
     });
@@ -411,11 +409,6 @@ export function createCSVExplorer(containerEl, options) {
         conversationHistory = [];
         var messagesEl = containerEl.querySelector('#eda-messages');
         if (messagesEl) messagesEl.innerHTML = '';
-        // Re-enable presets
-        containerEl.querySelectorAll('.eda-preset').forEach(function (btn) {
-          btn.classList.remove('used');
-          btn.disabled = false;
-        });
       });
     }
 

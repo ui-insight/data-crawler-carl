@@ -311,7 +311,7 @@ body {
 }
 
 .eda-preset:hover { background: rgba(241,179,0,0.2); border-color: var(--gold); }
-.eda-preset.used { opacity: 0.4; pointer-events: none; text-decoration: line-through; }
+
 
 /* ── Info button (in presets row) ── */
 .eda-info-btn {
