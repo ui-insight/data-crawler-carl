@@ -335,6 +335,10 @@ export function createCSVExplorer(containerEl, options) {
   }
 
   async function sendMessage(text) {
+    if (currentColumns.length === 0) {
+      appendMessage('error', 'Please upload a CSV file first.');
+      return;
+    }
     appendMessage('user', text);
 
     var inputEl = containerEl.querySelector('#eda-input');
