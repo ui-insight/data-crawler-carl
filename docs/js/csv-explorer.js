@@ -28,8 +28,6 @@ export function createCSVExplorer(containerEl, options) {
   var currentRowCount = 0;
   var currentCSVSample = '';
   var currentParsedData = [];
-  var lastSQL = '';
-  var lastSQLResult = null;
   var activePresets = options.presetPrompts || [];
   var sqlReady = false;
 
@@ -62,8 +60,6 @@ export function createCSVExplorer(containerEl, options) {
 
     // Reset conversation
     conversationHistory = [];
-    lastSQL = '';
-    lastSQLResult = null;
 
     // Update presets if callback provided
     if (options.onDataChange) {
@@ -132,23 +128,14 @@ export function createCSVExplorer(containerEl, options) {
 
     containerEl.innerHTML =
       '<div class="eda-layout">' +
-        // Left pane
+        // Left pane — data table only
         '<div class="eda-left-pane">' +
           '<div class="eda-tabs">' +
-            '<button class="eda-tab active" data-tab="data">Data</button>' +
-            '<button class="eda-tab" data-tab="sql">SQL</button>' +
+            '<span class="eda-tab active" style="cursor:default;">Data</span>' +
             '<span class="eda-meta">' + currentRowCount + ' rows &times; ' + currentColumns.length + ' cols</span>' +
           '</div>' +
-          '<div class="eda-tab-content active" data-tab="data">' +
-            uploadHtml +
-            '<div class="eda-table-scroll">' + tableHtml + '</div>' +
-          '</div>' +
-          '<div class="eda-tab-content" data-tab="sql">' +
-            '<div class="eda-sql-query" id="eda-sql-query">' +
-              '<span class="eda-sql-label">Run a query from the chat to see SQL here</span>' +
-            '</div>' +
-            '<div class="eda-sql-results" id="eda-sql-results"></div>' +
-          '</div>' +
+          uploadHtml +
+          '<div class="eda-table-scroll">' + tableHtml + '</div>' +
         '</div>' +
         // Right pane
         '<div class="eda-chat-pane">' +
@@ -221,25 +208,40 @@ export function createCSVExplorer(containerEl, options) {
     var div = document.createElement('div');
     div.className = 'eda-msg eda-msg-model';
 
-    // Extract and execute SQL blocks BEFORE rendering (results go to SQL tab only)
-    var sqlBlocks = extractSQLBlocks(responseText);
-    sqlBlocks.forEach(function (block) {
-      if (!block.error && block.columns.length > 0 && block.values.length > 0) {
-        updateSQLTab(block.sql, block.columns, block.values);
-      }
-    });
-
-    // Strip SQL code blocks from the display text — they run silently
-    var displayText = responseText.replace(/```sql\n[\s\S]*?```/g, '');
-
-    // Render markdown (without SQL blocks)
+    // Render markdown
     var html = (typeof marked !== 'undefined' && marked.parse)
-      ? marked.parse(displayText)
-      : displayText.replace(/\n/g, '<br>');
+      ? marked.parse(responseText)
+      : responseText.replace(/\n/g, '<br>');
 
     div.innerHTML = html;
 
-    // Extract and render chart specs (from original text, not stripped display text)
+    // Extract and execute SQL blocks — show results inline after each SQL block
+    var sqlBlocks = extractSQLBlocks(responseText);
+    var codeEls = div.querySelectorAll('code.language-sql');
+    sqlBlocks.forEach(function (block, i) {
+      var resultDiv = document.createElement('div');
+      resultDiv.className = 'eda-sql-result-inline';
+
+      if (block.error) {
+        resultDiv.innerHTML = '<div class="eda-sql-error">' + escapeHtml(block.error) + '</div>';
+      } else if (block.columns.length > 0 && block.values.length > 0) {
+        resultDiv.innerHTML = buildResultTableHtml(block.columns, block.values);
+      }
+
+      // Insert result after the SQL code block's <pre>
+      if (i < codeEls.length) {
+        var pre = codeEls[i].closest('pre');
+        if (pre) {
+          pre.after(resultDiv);
+        } else {
+          div.appendChild(resultDiv);
+        }
+      } else {
+        div.appendChild(resultDiv);
+      }
+    });
+
+    // Extract and render chart specs
     var chartBlocks = extractChartBlocks(responseText);
     var chartCodeEls = div.querySelectorAll('code.language-chart');
     chartBlocks.forEach(function (spec, i) {
@@ -318,26 +320,6 @@ export function createCSVExplorer(containerEl, options) {
     return results;
   }
 
-  function updateSQLTab(sql, columns, values) {
-    lastSQL = sql;
-    lastSQLResult = { columns: columns, values: values };
-
-    var queryEl = containerEl.querySelector('#eda-sql-query');
-    var resultsEl = containerEl.querySelector('#eda-sql-results');
-
-    if (queryEl) {
-      queryEl.innerHTML = '<pre class="eda-sql-display"><code>' + escapeHtml(sql) + '</code></pre>';
-    }
-    if (resultsEl) {
-      if (columns.length > 0 && values.length > 0) {
-        resultsEl.innerHTML = '<div class="eda-sql-result-inline">' + buildResultTableHtml(columns, values) + '</div>';
-      } else {
-        resultsEl.innerHTML = '<span class="eda-sql-empty">Query returned no results.</span>';
-      }
-    }
-
-  }
-
   // ── Chat ──
 
   function appendMessage(role, text) {
@@ -394,17 +376,6 @@ export function createCSVExplorer(containerEl, options) {
   // ── Event binding ──
 
   function bindEvents() {
-    // Tab switching
-    containerEl.querySelectorAll('.eda-tab').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        containerEl.querySelectorAll('.eda-tab').forEach(function (t) { t.classList.remove('active'); });
-        containerEl.querySelectorAll('.eda-tab-content').forEach(function (p) { p.classList.remove('active'); });
-        btn.classList.add('active');
-        var panel = containerEl.querySelector('.eda-tab-content[data-tab="' + btn.dataset.tab + '"]');
-        if (panel) panel.classList.add('active');
-      });
-    });
-
     // Preset prompts
     containerEl.querySelectorAll('.eda-preset').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -510,7 +481,7 @@ export function createCSVExplorer(containerEl, options) {
 
   return {
     loadData: function (csv) { loadData(csv); renderFull(); },
-    reset: function () { conversationHistory = []; lastSQL = ''; lastSQLResult = null; renderFull(); },
+    reset: function () { conversationHistory = []; renderFull(); },
     destroy: function () { containerEl.innerHTML = ''; }
   };
 }

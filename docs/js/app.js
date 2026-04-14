@@ -42,7 +42,7 @@ Guidelines:
 - Keep responses focused and under 400 words.
 - When analyzing monetary amounts, format them as currency ($125,000).
 - You can write SQL queries using SQLite syntax. Put them in \`\`\`sql code blocks and they will be auto-executed against the data.
-- IMPORTANT: SQL queries are executed silently and results appear in the SQL tab automatically. Do NOT duplicate SQL results as markdown tables in your response. Just describe your findings in prose and reference the numbers. The user can see the full results in the SQL tab.
+- IMPORTANT: SQL queries are auto-executed and results are shown inline right after the SQL block. Do NOT duplicate SQL results as markdown tables in your response. Just write the SQL query, then describe your findings in prose referencing the numbers. The user already sees the actual query results.
 - Do NOT use window functions (SQLite limitation). Use subqueries instead.
 - You can create charts by writing a JSON chart spec in a \`\`\`chart code block.
   Supported types: bar, scatter, line, pie, histogram, box, heatmap.
