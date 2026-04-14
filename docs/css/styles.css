@@ -825,7 +825,7 @@ body {
   position: absolute;
   bottom: -150px;
   left: calc(50% - 70px);
-  height: 140px;
+  height: 180px;
   z-index: 100;
   pointer-events: none;
   animation: mongo-zoom 5s ease-in-out forwards;
