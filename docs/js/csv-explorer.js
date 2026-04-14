@@ -83,9 +83,8 @@ export function createCSVExplorer(containerEl, options) {
   function renderNoKey() {
     containerEl.innerHTML =
       '<div class="eda-no-key">' +
-        '<p>This activity requires a Gemini API key.</p>' +
-        '<p>Enter a key on the <a href="index.html" style="color:#f1b300;">workshop home page</a>, ' +
-        'or ask the facilitator for the link with <code>?key=</code>.</p>' +
+        '<p>A Gemini API key is required to use the AI chat.</p>' +
+        '<p>Click <strong>API Key</strong> in the top bar to set one, or use a link with <code>?key=</code>.</p>' +
         '<div class="eda-key-inline">' +
           '<input type="password" id="eda-key-input" placeholder="Or paste key here..." />' +
           '<button id="eda-key-btn" class="eda-btn">Connect</button>' +

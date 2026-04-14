@@ -42,8 +42,14 @@ Guidelines:
 - When analyzing monetary amounts, format them as currency ($125,000).
 - You can write SQL queries using SQLite syntax. Put them in \`\`\`sql code blocks and they will be auto-executed against the data.
 - Do NOT use window functions (SQLite limitation). Use subqueries instead.
-- You can create charts by writing a JSON chart spec in a \`\`\`chart code block. Only bar and scatter types are supported.
-  Chart spec format: { "type": "bar"|"scatter", "x": [...], "y": [...], "title": "...", "xLabel": "...", "yLabel": "..." }
+- You can create charts by writing a JSON chart spec in a \`\`\`chart code block.
+  Supported types: bar, scatter, line, pie, histogram, box, heatmap.
+  Chart spec formats:
+  - bar/scatter/line: { "type": "...", "x": [...], "y": [...], "title": "...", "xLabel": "...", "yLabel": "..." }
+  - pie: { "type": "pie", "labels": [...], "values": [...], "title": "..." }
+  - histogram: { "type": "histogram", "x": [...], "title": "...", "xLabel": "..." }
+  - box: { "type": "box", "y": [...], "x": [...optional grouping...], "title": "..." }
+  - heatmap: { "type": "heatmap", "z": [[...], ...], "x": [...], "y": [...], "title": "..." }
   Always hardcode the data arrays in chart specs (do not reference SQL results).`;
 }
 
@@ -58,9 +64,82 @@ const INFO_HTML =
     '<p style="margin:0 0 0.6rem;"><strong>3. Live SQL</strong> &mdash; Any <code>```sql</code> blocks in the AI response ' +
     'are automatically executed against your local SQLite database. Results appear inline and in the SQL tab.</p>' +
     '<p style="margin:0;"><strong>4. Safe Charts</strong> &mdash; Chart specs (<code>```chart</code> blocks) are parsed as JSON ' +
-    'and rendered with <em>Plotly.js</em> using parameterized calls. Only bar and scatter chart types are supported &mdash; ' +
+    'and rendered with <em>Plotly.js</em> using parameterized calls. Supports bar, scatter, line, pie, histogram, box, and heatmap charts &mdash; ' +
     'no arbitrary code execution.</p>' +
   '</div>';
+
+function setupApiKeyNav(explorer) {
+  var btn = document.getElementById('api-key-btn');
+  var modal = document.getElementById('api-key-modal');
+  var closeBtn = document.getElementById('api-key-close');
+  var dot = document.getElementById('api-key-dot');
+  var input = document.getElementById('api-key-input');
+  var saveBtn = document.getElementById('api-key-save');
+  var status = document.getElementById('api-key-status');
+
+  if (!btn || !modal) return;
+
+  function updateStatus() {
+    if (hasAPIKey()) {
+      dot.classList.add('connected');
+      status.textContent = 'Key is set for this session.';
+      status.className = 'api-key-status ok';
+      input.value = '';
+      input.placeholder = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (saved)';
+    } else {
+      dot.classList.remove('connected');
+      status.textContent = '';
+      status.className = 'api-key-status';
+      input.placeholder = 'Paste your Gemini API key here...';
+    }
+  }
+
+  btn.addEventListener('click', function () {
+    updateStatus();
+    modal.classList.add('visible');
+  });
+
+  closeBtn.addEventListener('click', function () {
+    modal.classList.remove('visible');
+  });
+
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.classList.remove('visible');
+  });
+
+  saveBtn.addEventListener('click', function () {
+    var val = input.value.trim();
+    if (val) {
+      setKey(val);
+      initAPI(val);
+      updateStatus();
+      // Re-render explorer if it was showing the no-key state
+      var container = document.getElementById('explorer');
+      if (container && container.querySelector('.eda-no-key')) {
+        explorer.destroy();
+        Object.assign(explorer, createCSVExplorer(container, {
+          defaultCSV: null,
+          systemPromptBuilder: buildSystemPrompt,
+          presetPrompts: GENERIC_PRESETS,
+          onDataChange: function () { return GENERIC_PRESETS; },
+          geminiCaller: callGemini,
+          hasKey: hasAPIKey,
+          getKey: getKey,
+          setKey: setKey,
+          initAPI: initAPI,
+          showUpload: true,
+          infoHTML: INFO_HTML
+        }));
+      }
+    }
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') saveBtn.click();
+  });
+
+  updateStatus();
+}
 
 function init() {
   readKeyFromURL();
@@ -99,6 +178,8 @@ function init() {
       sampleBtn.style.display = 'none';
     });
   }
+
+  setupApiKeyNav(explorer);
 }
 
 // Run on DOM ready

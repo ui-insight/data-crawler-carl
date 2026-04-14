@@ -29,10 +29,20 @@ body {
   color: #fff;
 }
 
+.app-title-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.app-title-link:hover h1 {
+  opacity: 0.8;
+}
+
 .app-header h1 {
   font-size: 1.2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  transition: opacity 0.15s;
 }
 
 .app-header h1 span {
@@ -594,6 +604,164 @@ body {
 }
 
 .eda-modal .eda-modal-close:hover {
+  background: rgba(241,179,0,0.25);
+}
+
+/* ── API Key nav button ── */
+.api-key-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.api-key-btn:hover {
+  border-color: var(--gold);
+  background: rgba(241,179,0,0.1);
+}
+
+.api-key-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  transition: background 0.2s;
+}
+
+.api-key-dot.connected {
+  background: #22c55e;
+}
+
+/* ── Modal overlay (shared) ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-overlay.visible {
+  display: grid;
+  place-items: center;
+}
+
+.modal-dialog {
+  background: #fff;
+  padding: 2rem 2.5rem;
+  border-radius: 1rem;
+  max-width: 520px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  color: var(--ink);
+}
+
+.modal-dialog h2 {
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+}
+
+.modal-dialog h3 {
+  margin: 1.2rem 0 0.5rem;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.modal-dialog ol {
+  padding-left: 1.3em;
+  line-height: 1.8;
+  color: #333;
+  margin: 0 0 0.8rem;
+}
+
+.modal-dialog ol a {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.api-key-input-section {
+  background: rgba(241,179,0,0.05);
+  border: 2px solid rgba(241,179,0,0.2);
+  border-radius: 0.5rem;
+  padding: 0.8rem;
+}
+
+.api-key-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.api-key-row input {
+  flex: 1;
+  padding: 0.5rem 0.7rem;
+  border: 2px solid rgba(25,25,25,0.15);
+  border-radius: 0.4rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.api-key-row input:focus {
+  border-color: var(--gold);
+}
+
+.api-key-status {
+  font-size: 0.82rem;
+  margin-top: 0.4rem;
+  color: var(--muted);
+}
+
+.api-key-status.ok {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.api-key-privacy {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0.5rem 0;
+}
+
+.api-key-facilitator {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 0.8rem;
+}
+
+.api-key-facilitator code {
+  background: rgba(25,25,25,0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.modal-close-btn {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(241,179,0,0.1);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
   background: rgba(241,179,0,0.25);
 }
 
