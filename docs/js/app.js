@@ -1,0 +1,109 @@
+// Data Crawler Carl — standalone app config
+import { getKey, setKey, readKeyFromURL } from './key-manager.js';
+import { initAPI, hasAPIKey, callGemini } from './gemini-api.js';
+import { createCSVExplorer } from './csv-explorer.js';
+
+// Sample dataset for quick demo
+const SAMPLE_CSV = `Name,Department,Role,Salary,Start_Date,City
+Alice Chen,Engineering,Senior Engineer,125000,2019-03-15,Seattle
+Bob Martinez,Marketing,Director,145000,2017-06-01,New York
+Carol Davis,Engineering,Staff Engineer,155000,2016-11-20,Seattle
+Dan Wilson,Sales,Account Manager,95000,2021-01-10,Chicago
+Emily Brooks,Marketing,Analyst,78000,2022-05-22,New York
+Frank Kim,Engineering,Junior Engineer,92000,2023-08-14,Austin
+Grace Liu,Product,Product Manager,135000,2018-09-03,Seattle
+Hank Patel,Sales,VP Sales,180000,2015-04-18,New York
+Iris Johnson,Engineering,Senior Engineer,130000,2020-07-01,Austin
+Jake Thompson,Product,Designer,105000,2021-12-05,Chicago
+Karen Okafor,Marketing,Manager,115000,2019-10-28,Seattle
+Leo Torres,Engineering,Principal Engineer,175000,2014-02-14,Seattle
+Monica Reed,Sales,Account Executive,88000,2023-03-30,Chicago
+Nathan Park,Product,Senior PM,150000,2017-08-12,New York
+Olivia Grant,Engineering,Manager,160000,2016-05-09,Austin`;
+
+const GENERIC_PRESETS = [
+  { label: 'Summarize data',   text: 'Summarize this dataset. What are the key patterns and trends?' },
+  { label: 'Show statistics',  text: 'Show summary statistics for the numeric columns.' },
+  { label: 'Data quality',     text: 'Are there any data quality issues like missing values, duplicates, or outliers?' }
+];
+
+function buildSystemPrompt(columns, rowCount, csvSample) {
+  return `You are an AI data analyst helping explore a dataset interactively.
+
+You have access to a SQLite table called "data" with ${rowCount} rows and these columns: ${columns.join(', ')}
+
+Here is a sample of the data (CSV format):
+
+${csvSample}
+
+Guidelines:
+- Respond with clear, concise analysis formatted in markdown. Use tables, bullet points, and bold text.
+- Keep responses focused and under 400 words.
+- When analyzing monetary amounts, format them as currency ($125,000).
+- You can write SQL queries using SQLite syntax. Put them in \`\`\`sql code blocks and they will be auto-executed against the data.
+- Do NOT use window functions (SQLite limitation). Use subqueries instead.
+- You can create charts by writing a JSON chart spec in a \`\`\`chart code block. Only bar and scatter types are supported.
+  Chart spec format: { "type": "bar"|"scatter", "x": [...], "y": [...], "title": "...", "xLabel": "...", "yLabel": "..." }
+  Always hardcode the data arrays in chart specs (do not reference SQL results).`;
+}
+
+const INFO_HTML =
+  '<h3 style="margin:0 0 0.8rem; font-size:1.2rem; color:#191919;">How Data Crawler Carl Works</h3>' +
+  '<div style="font-size:0.95rem; line-height:1.7; color:#333;">' +
+    '<p style="margin:0 0 0.6rem;"><strong>1. CSV &rarr; SQLite</strong> &mdash; When you upload a CSV file, ' +
+    'it is parsed with <em>PapaParse</em> and loaded into an in-browser <em>SQLite</em> database ' +
+    'powered by sql.js (WebAssembly). No data leaves your browser.</p>' +
+    '<p style="margin:0 0 0.6rem;"><strong>2. AI Chat</strong> &mdash; Your questions are sent to <em>Google Gemini</em> ' +
+    'along with a sample of the data and the column names. Gemini writes SQL queries and chart specs in its responses.</p>' +
+    '<p style="margin:0 0 0.6rem;"><strong>3. Live SQL</strong> &mdash; Any <code>```sql</code> blocks in the AI response ' +
+    'are automatically executed against your local SQLite database. Results appear inline and in the SQL tab.</p>' +
+    '<p style="margin:0;"><strong>4. Safe Charts</strong> &mdash; Chart specs (<code>```chart</code> blocks) are parsed as JSON ' +
+    'and rendered with <em>Plotly.js</em> using parameterized calls. Only bar and scatter chart types are supported &mdash; ' +
+    'no arbitrary code execution.</p>' +
+  '</div>';
+
+function init() {
+  readKeyFromURL();
+
+  var key = getKey();
+  if (key && !hasAPIKey()) {
+    initAPI(key);
+  }
+
+  var container = document.getElementById('explorer');
+  if (!container) return;
+
+  // Load sample button
+  var sampleBtn = document.getElementById('load-sample');
+  var explorer = null;
+
+  explorer = createCSVExplorer(container, {
+    defaultCSV: null,
+    systemPromptBuilder: buildSystemPrompt,
+    presetPrompts: GENERIC_PRESETS,
+    onDataChange: function () {
+      return GENERIC_PRESETS;
+    },
+    geminiCaller: callGemini,
+    hasKey: hasAPIKey,
+    getKey: getKey,
+    setKey: setKey,
+    initAPI: initAPI,
+    showUpload: true,
+    infoHTML: INFO_HTML
+  });
+
+  if (sampleBtn) {
+    sampleBtn.addEventListener('click', function () {
+      explorer.loadData(SAMPLE_CSV);
+      sampleBtn.style.display = 'none';
+    });
+  }
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f1b300" />
+    <title>Data Crawler Carl</title>
+    <meta name="description" content="AI-powered CSV data explorer. Upload any CSV, query with natural language & SQL, visualize with charts. Runs entirely in your browser." />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1><span>Data Crawler</span> Carl</h1>
+      <span class="app-subtitle">Upload CSV. Ask questions. Get answers.</span>
+      <div class="app-header-actions">
+        <button id="load-sample">Try sample data</button>
+      </div>
+    </header>
+
+    <main class="app-body" id="explorer"></main>
+
+    <!-- CDN dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <script src="https://cdn.plot.ly/plotly-basic-2.35.2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- App module -->
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

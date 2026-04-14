@@ -1,0 +1,516 @@
+// csv-explorer.js — Reusable CSV data analysis component
+// Dependencies: sql-engine.js, chart-renderer.js, gemini-api.js, key-manager.js
+// CDN globals: marked, Papa, initSqlJs, Plotly
+
+import { initSQLEngine, isReady as isSQLReady, loadCSV, executeSQL } from './sql-engine.js';
+import { renderChart, isValidChartSpec } from './chart-renderer.js';
+
+/**
+ * Create a CSV Explorer instance.
+ * @param {HTMLElement} containerEl - DOM element to render into
+ * @param {object} options
+ * @param {string} [options.defaultCSV] - CSV string to load on init
+ * @param {function} options.systemPromptBuilder - (columns, rowCount, csvSample) => string
+ * @param {Array} options.presetPrompts - [{label, text}]
+ * @param {function} [options.onDataChange] - (columns, rowCount) => new presets array or void
+ * @param {function} options.geminiCaller - (systemPrompt, history, message) => Promise<string>
+ * @param {function} options.hasKey - () => boolean
+ * @param {function} options.getKey - () => string
+ * @param {function} options.setKey - (key) => void
+ * @param {function} options.initAPI - (key) => void
+ * @param {boolean} [options.showUpload=true]
+ * @param {string} [options.infoHTML] - HTML content for the info modal
+ * @returns {object} { loadData, reset, destroy }
+ */
+export function createCSVExplorer(containerEl, options) {
+  var conversationHistory = [];
+  var currentColumns = [];
+  var currentRowCount = 0;
+  var currentCSVSample = '';
+  var currentParsedData = [];
+  var lastSQL = '';
+  var lastSQLResult = null;
+  var activePresets = options.presetPrompts || [];
+  var sqlReady = false;
+
+  // Initialize
+  async function init() {
+    try {
+      await initSQLEngine();
+      sqlReady = true;
+    } catch (e) {
+      console.warn('SQL engine failed to load:', e);
+    }
+
+    if (options.defaultCSV) {
+      loadData(options.defaultCSV);
+    }
+
+    render();
+  }
+
+  function loadData(csvString) {
+    if (!sqlReady) return;
+    var result = loadCSV(csvString);
+    currentColumns = result.columns;
+    currentRowCount = result.rowCount;
+    currentParsedData = result.parsedData;
+
+    // Build CSV sample (header + first 5 rows)
+    var lines = csvString.trim().split('\n');
+    currentCSVSample = lines.slice(0, 6).join('\n');
+
+    // Reset conversation
+    conversationHistory = [];
+    lastSQL = '';
+    lastSQLResult = null;
+
+    // Update presets if callback provided
+    if (options.onDataChange) {
+      var newPresets = options.onDataChange(currentColumns, currentRowCount);
+      if (newPresets) activePresets = newPresets;
+    }
+  }
+
+  function render() {
+    if (!options.hasKey()) {
+      renderNoKey();
+      return;
+    }
+    renderFull();
+  }
+
+  function renderNoKey() {
+    containerEl.innerHTML =
+      '<div class="eda-no-key">' +
+        '<p>This activity requires a Gemini API key.</p>' +
+        '<p>Enter a key on the <a href="index.html" style="color:#f1b300;">workshop home page</a>, ' +
+        'or ask the facilitator for the link with <code>?key=</code>.</p>' +
+        '<div class="eda-key-inline">' +
+          '<input type="password" id="eda-key-input" placeholder="Or paste key here..." />' +
+          '<button id="eda-key-btn" class="eda-btn">Connect</button>' +
+        '</div>' +
+      '</div>';
+
+    containerEl.querySelector('#eda-key-btn').addEventListener('click', function () {
+      var val = containerEl.querySelector('#eda-key-input').value.trim();
+      if (val) {
+        options.setKey(val);
+        options.initAPI(val);
+        render();
+      }
+    });
+  }
+
+  function renderFull() {
+    var tableHtml = buildTableHtml(currentParsedData, currentColumns);
+
+    var presetsHtml = activePresets.map(function (p, i) {
+      return '<button class="eda-preset" data-idx="' + i + '">' + escapeHtml(p.label) + '</button>';
+    }).join('');
+
+    var uploadHtml = '';
+    if (options.showUpload !== false) {
+      uploadHtml =
+        '<div class="eda-upload-zone" id="eda-upload-zone">' +
+          '<span>Drop CSV or </span>' +
+          '<label class="eda-upload-link">browse<input type="file" accept=".csv,.tsv,.txt" id="eda-file-input" /></label>' +
+        '</div>';
+    }
+
+    var infoBtn = options.infoHTML
+      ? '<button class="eda-info-btn" id="eda-info-btn">How it works</button>'
+      : '';
+
+    var modalHtml = options.infoHTML
+      ? '<div class="eda-modal-overlay" id="eda-modal-overlay">' +
+          '<div class="eda-modal">' +
+            options.infoHTML +
+            '<button class="eda-modal-close" id="eda-modal-close">Got it</button>' +
+          '</div>' +
+        '</div>'
+      : '';
+
+    containerEl.innerHTML =
+      '<div class="eda-layout">' +
+        // Left pane
+        '<div class="eda-left-pane">' +
+          '<div class="eda-tabs">' +
+            '<button class="eda-tab active" data-tab="data">Data</button>' +
+            '<button class="eda-tab" data-tab="sql">SQL</button>' +
+            '<span class="eda-meta">' + currentRowCount + ' rows &times; ' + currentColumns.length + ' cols</span>' +
+          '</div>' +
+          '<div class="eda-tab-content active" data-tab="data">' +
+            uploadHtml +
+            '<div class="eda-table-scroll">' + tableHtml + '</div>' +
+          '</div>' +
+          '<div class="eda-tab-content" data-tab="sql">' +
+            '<div class="eda-sql-query" id="eda-sql-query">' +
+              '<span class="eda-sql-label">Run a query from the chat to see SQL here</span>' +
+            '</div>' +
+            '<div class="eda-sql-results" id="eda-sql-results"></div>' +
+          '</div>' +
+        '</div>' +
+        // Right pane
+        '<div class="eda-chat-pane">' +
+          '<div class="eda-presets" id="eda-presets">' +
+            presetsHtml +
+            infoBtn +
+          '</div>' +
+          '<div class="eda-messages" id="eda-messages"></div>' +
+          '<div class="eda-input-row">' +
+            '<input type="text" id="eda-input" placeholder="Ask a question about the data..." />' +
+            '<button id="eda-send" class="eda-btn">Send</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      modalHtml;
+
+    bindEvents();
+  }
+
+  function buildTableHtml(data, columns) {
+    if (!columns || columns.length === 0) return '<p style="padding:0.5rem;color:#888;">No data loaded</p>';
+
+    var html = '<table class="eda-table"><thead><tr>';
+    columns.forEach(function (col) {
+      html += '<th>' + escapeHtml(col) + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    // Show up to 200 rows in the table
+    var limit = Math.min(data.length, 200);
+    for (var r = 0; r < limit; r++) {
+      html += '<tr>';
+      columns.forEach(function (col) {
+        var val = data[r][col];
+        if (val === null || val === undefined || val === '') {
+          html += '<td><span class="eda-missing">--</span></td>';
+        } else {
+          html += '<td>' + escapeHtml(String(val)) + '</td>';
+        }
+      });
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+
+    if (data.length > 200) {
+      html += '<p style="text-align:center;font-size:0.5rem;color:#888;padding:0.15rem;">Showing 200 of ' + data.length + ' rows</p>';
+    }
+    return html;
+  }
+
+  function buildResultTableHtml(columns, values) {
+    var html = '<table><thead><tr>';
+    columns.forEach(function (c) { html += '<th>' + escapeHtml(c) + '</th>'; });
+    html += '</tr></thead><tbody>';
+    values.forEach(function (row) {
+      html += '<tr>';
+      row.forEach(function (v) {
+        html += '<td>' + escapeHtml(v === null ? 'NULL' : String(v)) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  // ── Response processing ──
+
+  function processResponse(responseText, messagesEl) {
+    var div = document.createElement('div');
+    div.className = 'eda-msg eda-msg-model';
+
+    // Render markdown
+    var html = (typeof marked !== 'undefined' && marked.parse)
+      ? marked.parse(responseText)
+      : responseText.replace(/\n/g, '<br>');
+
+    div.innerHTML = html;
+
+    // Extract and execute SQL blocks
+    var sqlBlocks = extractSQLBlocks(responseText);
+    var codeEls = div.querySelectorAll('code.language-sql');
+    sqlBlocks.forEach(function (block, i) {
+      if (i < codeEls.length) {
+        var pre = codeEls[i].closest('pre');
+        if (!pre) return;
+
+        if (block.error) {
+          var errDiv = document.createElement('div');
+          errDiv.className = 'eda-sql-error';
+          errDiv.textContent = 'SQL Error: ' + block.error;
+          pre.after(errDiv);
+        } else if (block.columns.length > 0 && block.values.length > 0) {
+          var resultDiv = document.createElement('div');
+          resultDiv.className = 'eda-sql-result-inline';
+          resultDiv.innerHTML = buildResultTableHtml(block.columns, block.values);
+          pre.after(resultDiv);
+          updateSQLTab(block.sql, block.columns, block.values);
+        }
+      }
+    });
+
+    // Extract and render chart specs
+    var chartBlocks = extractChartBlocks(responseText);
+    var chartCodeEls = div.querySelectorAll('code.language-chart');
+    chartBlocks.forEach(function (spec, i) {
+      var chartId = 'eda-chart-' + Date.now() + '-' + i;
+      var chartDiv = document.createElement('div');
+      chartDiv.id = chartId;
+      chartDiv.className = 'eda-chart-container';
+
+      // Insert after the code block, or append at end
+      if (i < chartCodeEls.length) {
+        var pre = chartCodeEls[i].closest('pre');
+        if (pre) {
+          pre.style.display = 'none';
+          pre.after(chartDiv);
+        } else {
+          div.appendChild(chartDiv);
+        }
+      } else {
+        div.appendChild(chartDiv);
+      }
+
+      if (spec.error) {
+        chartDiv.innerHTML = '<div class="eda-chart-error">' + escapeHtml(spec.error) + '</div>';
+      } else {
+        // Defer Plotly render to after DOM insertion
+        setTimeout(function () {
+          var success = renderChart(chartDiv, spec);
+          if (!success) {
+            chartDiv.innerHTML = '<div class="eda-chart-error">Could not render chart</div>';
+          }
+        }, 0);
+      }
+    });
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function extractSQLBlocks(text) {
+    var regex = /```sql\n([\s\S]*?)```/g;
+    var results = [];
+    var match;
+    while ((match = regex.exec(text)) !== null) {
+      var sql = match[1].trim();
+      if (!sqlReady) {
+        results.push({ sql: sql, error: 'SQL engine not available', columns: [], values: [] });
+        continue;
+      }
+      try {
+        var result = executeSQL(sql);
+        results.push({ sql: sql, columns: result.columns, values: result.values });
+      } catch (e) {
+        results.push({ sql: sql, error: e.message, columns: [], values: [] });
+      }
+    }
+    return results;
+  }
+
+  function extractChartBlocks(text) {
+    var regex = /```chart\n([\s\S]*?)```/g;
+    var results = [];
+    var match;
+    while ((match = regex.exec(text)) !== null) {
+      try {
+        var spec = JSON.parse(match[1].trim());
+        if (isValidChartSpec(spec)) {
+          results.push(spec);
+        } else {
+          results.push({ error: 'Invalid chart spec: need type (bar/scatter), x array, y array' });
+        }
+      } catch (e) {
+        results.push({ error: 'Could not parse chart JSON: ' + e.message });
+      }
+    }
+    return results;
+  }
+
+  function updateSQLTab(sql, columns, values) {
+    lastSQL = sql;
+    lastSQLResult = { columns: columns, values: values };
+
+    var queryEl = containerEl.querySelector('#eda-sql-query');
+    var resultsEl = containerEl.querySelector('#eda-sql-results');
+
+    if (queryEl) {
+      queryEl.innerHTML = '<pre class="eda-sql-display"><code>' + escapeHtml(sql) + '</code></pre>';
+    }
+    if (resultsEl) {
+      if (columns.length > 0 && values.length > 0) {
+        resultsEl.innerHTML = '<div class="eda-sql-result-inline">' + buildResultTableHtml(columns, values) + '</div>';
+      } else {
+        resultsEl.innerHTML = '<span class="eda-sql-empty">Query returned no results.</span>';
+      }
+    }
+
+    // Auto-switch to SQL tab
+    var sqlTab = containerEl.querySelector('.eda-tab[data-tab="sql"]');
+    if (sqlTab) sqlTab.click();
+  }
+
+  // ── Chat ──
+
+  function appendMessage(role, text) {
+    var messagesEl = containerEl.querySelector('#eda-messages');
+    if (!messagesEl) return null;
+
+    if (role === 'model') {
+      return processResponse(text, messagesEl);
+    }
+
+    var div = document.createElement('div');
+    div.className = 'eda-msg eda-msg-' + role;
+
+    if (role === 'loading') {
+      div.innerHTML = '<div class="eda-loading"><span></span><span></span><span></span></div>';
+    } else if (role === 'error') {
+      div.textContent = text;
+    } else {
+      div.textContent = text;
+    }
+
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  async function sendMessage(text) {
+    appendMessage('user', text);
+
+    var inputEl = containerEl.querySelector('#eda-input');
+    var sendBtn = containerEl.querySelector('#eda-send');
+    if (inputEl) inputEl.value = '';
+    if (sendBtn) sendBtn.disabled = true;
+
+    var loadingEl = appendMessage('loading', '');
+
+    var systemPrompt = options.systemPromptBuilder(currentColumns, currentRowCount, currentCSVSample);
+
+    try {
+      var response = await options.geminiCaller(systemPrompt, conversationHistory, text);
+      conversationHistory.push({ role: 'user', text: text });
+      conversationHistory.push({ role: 'model', text: response });
+
+      if (loadingEl) loadingEl.remove();
+      appendMessage('model', response);
+    } catch (e) {
+      if (loadingEl) loadingEl.remove();
+      appendMessage('error', 'Error: ' + e.message);
+    }
+
+    if (sendBtn) sendBtn.disabled = false;
+  }
+
+  // ── Event binding ──
+
+  function bindEvents() {
+    // Tab switching
+    containerEl.querySelectorAll('.eda-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        containerEl.querySelectorAll('.eda-tab').forEach(function (t) { t.classList.remove('active'); });
+        containerEl.querySelectorAll('.eda-tab-content').forEach(function (p) { p.classList.remove('active'); });
+        btn.classList.add('active');
+        var panel = containerEl.querySelector('.eda-tab-content[data-tab="' + btn.dataset.tab + '"]');
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    // Preset prompts
+    containerEl.querySelectorAll('.eda-preset').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.dataset.idx);
+        btn.classList.add('used');
+        btn.disabled = true;
+        sendMessage(activePresets[idx].text);
+      });
+    });
+
+    // Free text input
+    var input = containerEl.querySelector('#eda-input');
+    var sendBtn = containerEl.querySelector('#eda-send');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', function () {
+        var text = input.value.trim();
+        if (text) sendMessage(text);
+      });
+    }
+    if (input) {
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          var text = input.value.trim();
+          if (text) sendMessage(text);
+        }
+      });
+    }
+
+    // File upload
+    var uploadZone = containerEl.querySelector('#eda-upload-zone');
+    var fileInput = containerEl.querySelector('#eda-file-input');
+
+    if (uploadZone && fileInput) {
+      uploadZone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        uploadZone.classList.add('hover');
+      });
+      uploadZone.addEventListener('dragleave', function () {
+        uploadZone.classList.remove('hover');
+      });
+      uploadZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        uploadZone.classList.remove('hover');
+        if (e.dataTransfer.files.length > 0) {
+          readFile(e.dataTransfer.files[0]);
+        }
+      });
+      fileInput.addEventListener('change', function () {
+        if (fileInput.files.length > 0) {
+          readFile(fileInput.files[0]);
+        }
+      });
+    }
+
+    // Info modal
+    var infoBtn = containerEl.querySelector('#eda-info-btn');
+    var modal = containerEl.querySelector('#eda-modal-overlay');
+    var closeBtn = containerEl.querySelector('#eda-modal-close');
+
+    if (infoBtn && modal) {
+      infoBtn.addEventListener('click', function () { modal.classList.add('visible'); });
+      if (closeBtn) closeBtn.addEventListener('click', function () { modal.classList.remove('visible'); });
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) modal.classList.remove('visible');
+      });
+    }
+  }
+
+  function readFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var csvString = e.target.result;
+      loadData(csvString);
+      renderFull();
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Utilities ──
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Public API ──
+
+  init();
+
+  return {
+    loadData: function (csv) { loadData(csv); renderFull(); },
+    reset: function () { conversationHistory = []; lastSQL = ''; lastSQLResult = null; renderFull(); },
+    destroy: function () { containerEl.innerHTML = ''; }
+  };
+}
