@@ -133,6 +133,7 @@ export function createCSVExplorer(containerEl, options) {
           '</div>' +
           '<div class="eda-messages" id="eda-messages"></div>' +
           '<div class="eda-input-row">' +
+            '<button id="eda-mongo" class="eda-btn eda-btn-mongo" title="Mongo no!">Mongo no!</button>' +
             '<input type="text" id="eda-input" placeholder="Ask a question about the data..." />' +
             '<button id="eda-send" class="eda-btn">Send</button>' +
             '<button id="eda-clear" class="eda-btn eda-btn-clear" title="Clear conversation">Clear</button>' +
@@ -386,6 +387,21 @@ export function createCSVExplorer(containerEl, options) {
           var text = input.value.trim();
           if (text) sendMessage(text);
         }
+      });
+    }
+
+    // Mongo no! easter egg
+    var mongoBtn = containerEl.querySelector('#eda-mongo');
+    if (mongoBtn) {
+      mongoBtn.addEventListener('click', function () {
+        var chatPane = containerEl.querySelector('.eda-chat-pane');
+        if (!chatPane) return;
+        var img = document.createElement('img');
+        img.src = 'img/mongo.png';
+        img.className = 'mongo-run';
+        img.alt = 'Mongo no!';
+        chatPane.appendChild(img);
+        img.addEventListener('animationend', function () { img.remove(); });
       });
     }
 

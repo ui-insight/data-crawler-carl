@@ -297,6 +297,7 @@ body {
   background: var(--bg);
   overflow: hidden;
   min-height: 0;
+  position: relative;
 }
 
 /* ── Preset buttons ── */
@@ -804,6 +805,35 @@ body {
 
 .modal-close-btn:hover {
   background: rgba(241,179,0,0.25);
+}
+
+/* ── Mongo no! easter egg ── */
+.eda-btn-mongo {
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.08);
+  color: #ef4444;
+  font-size: 0.82rem;
+  padding: 0.5rem 0.7rem;
+  white-space: nowrap;
+}
+.eda-btn-mongo:hover {
+  background: rgba(239,68,68,0.18);
+  border-color: #ef4444;
+}
+
+.mongo-run {
+  position: absolute;
+  bottom: 50px;
+  left: -120px;
+  height: 100px;
+  z-index: 100;
+  pointer-events: none;
+  animation: mongo-zoom 1.6s linear forwards;
+}
+
+@keyframes mongo-zoom {
+  0%   { left: -120px; transform: scaleX(1); }
+  100% { left: calc(100% + 120px); transform: scaleX(1); }
 }
 
 /* ── Responsive ── */
