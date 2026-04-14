@@ -14,6 +14,7 @@
       <span class="app-subtitle">Upload CSV. Ask questions. Get answers.</span>
       <div class="app-header-actions">
         <button id="load-sample">Try sample data</button>
+        <button id="about-btn" class="about-btn">About</button>
         <button id="api-key-btn" class="api-key-btn">
           <span class="api-key-dot" id="api-key-dot"></span>
           API Key
@@ -40,6 +41,36 @@
         <p class="api-key-privacy">Your key is stored only in your browser's session memory &mdash; it is never saved to disk or sent anywhere except directly to Google's API. It is cleared when you close the tab.</p>
         <p class="api-key-facilitator"><strong>Workshop facilitators:</strong> Pre-fill keys for attendees by sharing a link with <code>?key=YOUR_KEY</code> appended.</p>
         <button class="modal-close-btn" id="api-key-close">Done</button>
+      </div>
+    </div>
+    <!-- About Modal -->
+    <div id="about-modal" class="modal-overlay">
+      <div class="modal-dialog" style="max-width:600px;">
+        <h2>About Data Crawler Carl</h2>
+        <p style="line-height:1.7; margin:0 0 1rem;">An AI-powered CSV data explorer that runs entirely in your browser. Upload any dataset, ask questions in plain English, and get back SQL queries, charts, and analysis.</p>
+
+        <h3>What you can do</h3>
+        <ul style="line-height:1.8; padding-left:1.3em; margin:0 0 1rem;">
+          <li><strong>Upload any CSV</strong> &mdash; drag &amp; drop or browse. Data is parsed and loaded into an in-browser SQLite database.</li>
+          <li><strong>Ask questions in natural language</strong> &mdash; "What's the average salary by department?" or "Show me the top 10 cities."</li>
+          <li><strong>Auto-generated SQL</strong> &mdash; The AI writes SQLite queries that run locally against your data. Results appear inline and in the SQL tab.</li>
+          <li><strong>Charts</strong> &mdash; Bar, scatter, line, pie, histogram, box, and heatmap charts rendered with Plotly.js. Ask for trendlines too.</li>
+          <li><strong>Iterate</strong> &mdash; Follow up with more questions. The AI remembers context within the conversation.</li>
+        </ul>
+
+        <h3>Privacy &amp; Security</h3>
+        <ul style="line-height:1.8; padding-left:1.3em; margin:0 0 1rem;">
+          <li><strong>Your data stays local.</strong> CSV files are parsed and queried entirely in your browser using WebAssembly (sql.js). No data is uploaded to any server.</li>
+          <li><strong>Only the schema is sent to AI.</strong> Column names and a small sample (first 5 rows) are sent to Google Gemini to provide context for your questions.</li>
+          <li><strong>API key is session-only.</strong> Your Gemini API key is held in session memory and cleared when you close or reload the tab. It is never saved to disk.</li>
+          <li><strong>No code execution.</strong> Charts are rendered from safe JSON specs &mdash; no <code>eval()</code> or arbitrary code runs.</li>
+          <li><strong>Static site.</strong> This is a static GitHub Pages site with no backend, no cookies, no tracking, and no analytics.</li>
+        </ul>
+
+        <h3>Workshop Use</h3>
+        <p style="line-height:1.7; margin:0 0 1rem;">Part of the <a href="https://ui-insight.github.io/REACHWorkshop2026/" target="_blank" style="color:#f1b300; font-weight:700;">REACH 2026 AI4RA Workshop</a>. Facilitators can pre-fill keys by sharing links with <code>?key=YOUR_KEY</code>.</p>
+
+        <button class="modal-close-btn" id="about-close">Got it</button>
       </div>
     </div>
     </header>

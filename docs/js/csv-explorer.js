@@ -160,6 +160,7 @@ export function createCSVExplorer(containerEl, options) {
           '<div class="eda-input-row">' +
             '<input type="text" id="eda-input" placeholder="Ask a question about the data..." />' +
             '<button id="eda-send" class="eda-btn">Send</button>' +
+            '<button id="eda-clear" class="eda-btn eda-btn-clear" title="Clear conversation">Clear</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -220,37 +221,25 @@ export function createCSVExplorer(containerEl, options) {
     var div = document.createElement('div');
     div.className = 'eda-msg eda-msg-model';
 
-    // Render markdown
-    var html = (typeof marked !== 'undefined' && marked.parse)
-      ? marked.parse(responseText)
-      : responseText.replace(/\n/g, '<br>');
-
-    div.innerHTML = html;
-
-    // Extract and execute SQL blocks
+    // Extract and execute SQL blocks BEFORE rendering (results go to SQL tab only)
     var sqlBlocks = extractSQLBlocks(responseText);
-    var codeEls = div.querySelectorAll('code.language-sql');
-    sqlBlocks.forEach(function (block, i) {
-      if (i < codeEls.length) {
-        var pre = codeEls[i].closest('pre');
-        if (!pre) return;
-
-        if (block.error) {
-          var errDiv = document.createElement('div');
-          errDiv.className = 'eda-sql-error';
-          errDiv.textContent = 'SQL Error: ' + block.error;
-          pre.after(errDiv);
-        } else if (block.columns.length > 0 && block.values.length > 0) {
-          var resultDiv = document.createElement('div');
-          resultDiv.className = 'eda-sql-result-inline';
-          resultDiv.innerHTML = buildResultTableHtml(block.columns, block.values);
-          pre.after(resultDiv);
-          updateSQLTab(block.sql, block.columns, block.values);
-        }
+    sqlBlocks.forEach(function (block) {
+      if (!block.error && block.columns.length > 0 && block.values.length > 0) {
+        updateSQLTab(block.sql, block.columns, block.values);
       }
     });
 
-    // Extract and render chart specs
+    // Strip SQL code blocks from the display text — they run silently
+    var displayText = responseText.replace(/```sql\n[\s\S]*?```/g, '');
+
+    // Render markdown (without SQL blocks)
+    var html = (typeof marked !== 'undefined' && marked.parse)
+      ? marked.parse(displayText)
+      : displayText.replace(/\n/g, '<br>');
+
+    div.innerHTML = html;
+
+    // Extract and render chart specs (from original text, not stripped display text)
     var chartBlocks = extractChartBlocks(responseText);
     var chartCodeEls = div.querySelectorAll('code.language-chart');
     chartBlocks.forEach(function (spec, i) {
@@ -347,9 +336,6 @@ export function createCSVExplorer(containerEl, options) {
       }
     }
 
-    // Auto-switch to SQL tab
-    var sqlTab = containerEl.querySelector('.eda-tab[data-tab="sql"]');
-    if (sqlTab) sqlTab.click();
   }
 
   // ── Chat ──
@@ -444,6 +430,21 @@ export function createCSVExplorer(containerEl, options) {
           var text = input.value.trim();
           if (text) sendMessage(text);
         }
+      });
+    }
+
+    // Clear conversation
+    var clearBtn = containerEl.querySelector('#eda-clear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function () {
+        conversationHistory = [];
+        var messagesEl = containerEl.querySelector('#eda-messages');
+        if (messagesEl) messagesEl.innerHTML = '';
+        // Re-enable presets
+        containerEl.querySelectorAll('.eda-preset').forEach(function (btn) {
+          btn.classList.remove('used');
+          btn.disabled = false;
+        });
       });
     }
 

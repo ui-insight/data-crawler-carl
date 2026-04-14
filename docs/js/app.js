@@ -24,7 +24,8 @@ Olivia Grant,Engineering,Manager,160000,2016-05-09,Austin`;
 const GENERIC_PRESETS = [
   { label: 'Summarize data',   text: 'Summarize this dataset. What are the key patterns and trends?' },
   { label: 'Show statistics',  text: 'Show summary statistics for the numeric columns.' },
-  { label: 'Data quality',     text: 'Are there any data quality issues like missing values, duplicates, or outliers?' }
+  { label: 'Data quality',     text: 'Are there any data quality issues like missing values, duplicates, or outliers?' },
+  { label: 'Plot something',   text: 'Pick the most interesting relationship or distribution in this dataset and create a chart to visualize it. Choose the best chart type for the data.' }
 ];
 
 function buildSystemPrompt(columns, rowCount, csvSample) {
@@ -41,6 +42,7 @@ Guidelines:
 - Keep responses focused and under 400 words.
 - When analyzing monetary amounts, format them as currency ($125,000).
 - You can write SQL queries using SQLite syntax. Put them in \`\`\`sql code blocks and they will be auto-executed against the data.
+- IMPORTANT: SQL queries are executed silently and results appear in the SQL tab automatically. Do NOT duplicate SQL results as markdown tables in your response. Just describe your findings in prose and reference the numbers. The user can see the full results in the SQL tab.
 - Do NOT use window functions (SQLite limitation). Use subqueries instead.
 - You can create charts by writing a JSON chart spec in a \`\`\`chart code block.
   Supported types: bar, scatter, line, pie, histogram, box, heatmap.
@@ -50,7 +52,9 @@ Guidelines:
   - histogram: { "type": "histogram", "x": [...], "title": "...", "xLabel": "..." }
   - box: { "type": "box", "y": [...], "x": [...optional grouping...], "title": "..." }
   - heatmap: { "type": "heatmap", "z": [[...], ...], "x": [...], "y": [...], "title": "..." }
-  Always hardcode the data arrays in chart specs (do not reference SQL results).`;
+  Always hardcode the data arrays in chart specs (do not reference SQL results).
+- TRENDLINES: For any chart with numeric x/y data, you CAN add a trendline by including "trendline": true in the chart spec JSON. This overlays a linear regression line. Use it whenever the user asks for trends, correlations, or trendlines.
+- MODIFYING CHARTS: When the user asks to add a trendline, change a chart type, or modify a previous chart in any way, simply re-create the entire chart spec from scratch with the requested changes applied. You always have full control over chart output — just emit a new \`\`\`chart block with the updated spec.`;
 }
 
 const INFO_HTML =
@@ -180,6 +184,20 @@ function init() {
   }
 
   setupApiKeyNav(explorer);
+  setupAboutModal();
+}
+
+function setupAboutModal() {
+  var btn = document.getElementById('about-btn');
+  var modal = document.getElementById('about-modal');
+  var closeBtn = document.getElementById('about-close');
+  if (!btn || !modal) return;
+
+  btn.addEventListener('click', function () { modal.classList.add('visible'); });
+  if (closeBtn) closeBtn.addEventListener('click', function () { modal.classList.remove('visible'); });
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.classList.remove('visible');
+  });
 }
 
 // Run on DOM ready

@@ -16,6 +16,9 @@ export function setKey(k) {
 }
 
 export function readKeyFromURL() {
+  // Wipe any previously stored key on page load — forces fresh start each reload
+  sessionStorage.removeItem(STORAGE_KEY);
+
   var params = new URLSearchParams(window.location.search);
   var key = params.get('key');
   if (key) {
