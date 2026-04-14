@@ -133,10 +133,10 @@ export function createCSVExplorer(containerEl, options) {
           '</div>' +
           '<div class="eda-messages" id="eda-messages"></div>' +
           '<div class="eda-input-row">' +
-            '<button id="eda-mongo" class="eda-btn eda-btn-mongo" title="Mongo no!">Mongo no!</button>' +
             '<input type="text" id="eda-input" placeholder="Ask a question about the data..." />' +
             '<button id="eda-send" class="eda-btn">Send</button>' +
             '<button id="eda-clear" class="eda-btn eda-btn-clear" title="Clear conversation">Clear</button>' +
+            '<button id="eda-mongo" class="eda-btn eda-btn-mongo" title="Mongo no!">Mongo no!</button>' +
           '</div>' +
         '</div>' +
       '</div>';
