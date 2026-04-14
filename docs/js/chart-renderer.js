@@ -145,6 +145,44 @@ function buildTrace(spec) {
 }
 
 /**
+ * Compute a linear regression trendline from numeric x/y arrays.
+ * Returns { x: [xMin, xMax], y: [yMin, yMax] } or null if not computable.
+ */
+function computeTrendline(xArr, yArr) {
+  // Filter to numeric pairs only
+  var xs = [], ys = [];
+  for (var i = 0; i < xArr.length; i++) {
+    if (typeof xArr[i] === 'number' && typeof yArr[i] === 'number' &&
+        isFinite(xArr[i]) && isFinite(yArr[i])) {
+      xs.push(xArr[i]);
+      ys.push(yArr[i]);
+    }
+  }
+  if (xs.length < 2) return null;
+
+  var n = xs.length;
+  var sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  for (var j = 0; j < n; j++) {
+    sumX += xs[j];
+    sumY += ys[j];
+    sumXY += xs[j] * ys[j];
+    sumXX += xs[j] * xs[j];
+  }
+  var denom = n * sumXX - sumX * sumX;
+  if (denom === 0) return null;
+
+  var slope = (n * sumXY - sumX * sumY) / denom;
+  var intercept = (sumY - slope * sumX) / n;
+
+  var xMin = Math.min.apply(null, xs);
+  var xMax = Math.max.apply(null, xs);
+  return {
+    x: [xMin, xMax],
+    y: [intercept + slope * xMin, intercept + slope * xMax]
+  };
+}
+
+/**
  * Render a chart into a container element.
  * @param {HTMLElement} containerEl
  * @param {object} spec
@@ -157,12 +195,31 @@ export function renderChart(containerEl, spec) {
   var trace = buildTrace(spec);
   if (!trace) return false;
 
+  var traces = [trace];
+
+  // Add trendline if requested and type has x/y numeric data
+  if (spec.trendline && trace.x && trace.y) {
+    var trend = computeTrendline(trace.x, trace.y);
+    if (trend) {
+      traces.push({
+        type: 'scatter',
+        mode: 'lines',
+        x: trend.x,
+        y: trend.y,
+        line: { color: '#e74c3c', width: 2, dash: 'dash' },
+        name: 'Trend',
+        showlegend: true
+      });
+    }
+  }
+
   var layout = {
     title: { text: sanitizeString(spec.title || ''), font: { size: 13 } },
     margin: { t: 35, r: 10, b: 40, l: 55 },
     height: 350,
     paper_bgcolor: 'rgba(0,0,0,0)',
-    plot_bgcolor: 'rgba(0,0,0,0)'
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    showlegend: traces.length > 1
   };
 
   // Only add axis titles for types that use axes
@@ -171,7 +228,7 @@ export function renderChart(containerEl, spec) {
     layout.yaxis = { title: sanitizeString(spec.yLabel || '') };
   }
 
-  window.Plotly.newPlot(containerEl, [trace], layout, {
+  window.Plotly.newPlot(containerEl, traces, layout, {
     displayModeBar: false,
     responsive: true
   });
