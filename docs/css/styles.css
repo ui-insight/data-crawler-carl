@@ -825,29 +825,29 @@ body {
 
 .mongo-run {
   position: absolute;
-  bottom: -140px;
-  left: calc(50% - 60px);
-  height: 140px;
+  bottom: -110px;
+  left: calc(50% - 50px);
+  height: 110px;
   z-index: 5;
   pointer-events: none;
   animation: mongo-zoom 5s ease-in-out forwards;
 }
 
 @keyframes mongo-zoom {
-  0%   { bottom: -140px; left: calc(50% - 60px); transform: scaleX(1); }
+  0%   { bottom: -110px; left: calc(50% - 50px); transform: scaleX(1); }
   /* Rise up behind the input box */
-  20%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
+  20%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(1); }
   /* Looking right... */
-  32%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
+  32%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(1); }
   /* Flip to look left */
-  36%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(-1); }
+  36%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(-1); }
   /* Looking left... */
-  52%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(-1); }
+  52%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(-1); }
   /* Flip back to look right */
-  56%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
+  56%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(1); }
   /* Pause, then bolt! */
-  65%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
-  100% { bottom: 0;      left: calc(100% + 140px); transform: scaleX(1); }
+  65%  { bottom: 20px;   left: calc(50% - 50px); transform: scaleX(1); }
+  100% { bottom: 20px;   left: calc(100% + 110px); transform: scaleX(1); }
 }
 
 /* ── Responsive ── */
