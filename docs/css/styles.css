@@ -824,16 +824,16 @@ body {
 .mongo-run {
   position: absolute;
   bottom: 50px;
-  left: -120px;
-  height: 100px;
+  left: -150px;
+  height: 140px;
   z-index: 100;
   pointer-events: none;
-  animation: mongo-zoom 1.6s linear forwards;
+  animation: mongo-zoom 3s linear forwards;
 }
 
 @keyframes mongo-zoom {
-  0%   { left: -120px; transform: scaleX(1); }
-  100% { left: calc(100% + 120px); transform: scaleX(1); }
+  0%   { left: -150px; transform: scaleX(1); }
+  100% { left: calc(100% + 150px); transform: scaleX(1); }
 }
 
 /* ── Responsive ── */
