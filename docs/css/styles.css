@@ -85,17 +85,30 @@ body {
 /* ── Two-column layout ── */
 .eda-layout {
   display: grid;
-  grid-template-columns: 40% 1fr;
+  grid-template-columns: 40% 6px 1fr;
   gap: 0;
   height: 100%;
   overflow: hidden;
+}
+
+/* ── Resizer handle ── */
+.eda-resizer {
+  background: var(--border);
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.eda-resizer:hover,
+.eda-resizer:active {
+  background: var(--gold);
 }
 
 /* ── Left pane (Data/SQL tabs) ── */
 .eda-left-pane {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
   background: var(--card-bg);
   overflow: hidden;
   min-height: 0;
@@ -796,9 +809,11 @@ body {
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .eda-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
     grid-template-rows: 40vh 1fr;
   }
+
+  .eda-resizer { display: none; }
 
   .eda-left-pane {
     border-right: none;

@@ -57,21 +57,6 @@ Guidelines:
 - MODIFYING CHARTS: When the user asks to add a trendline, change a chart type, or modify a previous chart in any way, simply re-create the entire chart spec from scratch with the requested changes applied. You always have full control over chart output — just emit a new \`\`\`chart block with the updated spec.`;
 }
 
-const INFO_HTML =
-  '<h3 style="margin:0 0 0.8rem; font-size:1.2rem; color:#191919;">How Data Crawler Carl Works</h3>' +
-  '<div style="font-size:0.95rem; line-height:1.7; color:#333;">' +
-    '<p style="margin:0 0 0.6rem;"><strong>1. CSV &rarr; SQLite</strong> &mdash; When you upload a CSV file, ' +
-    'it is parsed with <em>PapaParse</em> and loaded into an in-browser <em>SQLite</em> database ' +
-    'powered by sql.js (WebAssembly). No data leaves your browser.</p>' +
-    '<p style="margin:0 0 0.6rem;"><strong>2. AI Chat</strong> &mdash; Your questions are sent to <em>Google Gemini</em> ' +
-    'along with a sample of the data and the column names. Gemini writes SQL queries and chart specs in its responses.</p>' +
-    '<p style="margin:0 0 0.6rem;"><strong>3. Live SQL</strong> &mdash; Any <code>```sql</code> blocks in the AI response ' +
-    'are automatically executed against your local SQLite database. Results appear inline and in the SQL tab.</p>' +
-    '<p style="margin:0;"><strong>4. Safe Charts</strong> &mdash; Chart specs (<code>```chart</code> blocks) are parsed as JSON ' +
-    'and rendered with <em>Plotly.js</em> using parameterized calls. Supports bar, scatter, line, pie, histogram, box, and heatmap charts &mdash; ' +
-    'no arbitrary code execution.</p>' +
-  '</div>';
-
 function setupApiKeyNav(explorer) {
   var btn = document.getElementById('api-key-btn');
   var modal = document.getElementById('api-key-modal');
@@ -131,8 +116,7 @@ function setupApiKeyNav(explorer) {
           getKey: getKey,
           setKey: setKey,
           initAPI: initAPI,
-          showUpload: true,
-          infoHTML: INFO_HTML
+          showUpload: true
         }));
       }
     }
@@ -172,8 +156,7 @@ function init() {
     getKey: getKey,
     setKey: setKey,
     initAPI: initAPI,
-    showUpload: true,
-    infoHTML: INFO_HTML
+    showUpload: true
   });
 
   if (sampleBtn) {
@@ -184,19 +167,22 @@ function init() {
   }
 
   setupApiKeyNav(explorer);
-  setupAboutModal();
+  setupNavModals();
 }
 
-function setupAboutModal() {
-  var btn = document.getElementById('about-btn');
-  var modal = document.getElementById('about-modal');
-  var closeBtn = document.getElementById('about-close');
-  if (!btn || !modal) return;
+function setupNavModals() {
+  [['about-btn', 'about-modal', 'about-close'],
+   ['how-btn', 'how-modal', 'how-close']].forEach(function (ids) {
+    var btn = document.getElementById(ids[0]);
+    var modal = document.getElementById(ids[1]);
+    var closeBtn = document.getElementById(ids[2]);
+    if (!btn || !modal) return;
 
-  btn.addEventListener('click', function () { modal.classList.add('visible'); });
-  if (closeBtn) closeBtn.addEventListener('click', function () { modal.classList.remove('visible'); });
-  modal.addEventListener('click', function (e) {
-    if (e.target === modal) modal.classList.remove('visible');
+    btn.addEventListener('click', function () { modal.classList.add('visible'); });
+    if (closeBtn) closeBtn.addEventListener('click', function () { modal.classList.remove('visible'); });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.classList.remove('visible');
+    });
   });
 }
 

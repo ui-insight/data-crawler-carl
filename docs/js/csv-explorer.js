@@ -113,23 +113,10 @@ export function createCSVExplorer(containerEl, options) {
         '</div>';
     }
 
-    var infoBtn = options.infoHTML
-      ? '<button class="eda-info-btn" id="eda-info-btn">How it works</button>'
-      : '';
-
-    var modalHtml = options.infoHTML
-      ? '<div class="eda-modal-overlay" id="eda-modal-overlay">' +
-          '<div class="eda-modal">' +
-            options.infoHTML +
-            '<button class="eda-modal-close" id="eda-modal-close">Got it</button>' +
-          '</div>' +
-        '</div>'
-      : '';
-
     containerEl.innerHTML =
-      '<div class="eda-layout">' +
+      '<div class="eda-layout" id="eda-layout">' +
         // Left pane — data table only
-        '<div class="eda-left-pane">' +
+        '<div class="eda-left-pane" id="eda-left-pane">' +
           '<div class="eda-tabs">' +
             '<span class="eda-tab active" style="cursor:default;">Data</span>' +
             '<span class="eda-meta">' + currentRowCount + ' rows &times; ' + currentColumns.length + ' cols</span>' +
@@ -137,11 +124,12 @@ export function createCSVExplorer(containerEl, options) {
           uploadHtml +
           '<div class="eda-table-scroll">' + tableHtml + '</div>' +
         '</div>' +
+        // Draggable resizer
+        '<div class="eda-resizer" id="eda-resizer"></div>' +
         // Right pane
         '<div class="eda-chat-pane">' +
           '<div class="eda-presets" id="eda-presets">' +
             presetsHtml +
-            infoBtn +
           '</div>' +
           '<div class="eda-messages" id="eda-messages"></div>' +
           '<div class="eda-input-row">' +
@@ -150,8 +138,7 @@ export function createCSVExplorer(containerEl, options) {
             '<button id="eda-clear" class="eda-btn eda-btn-clear" title="Clear conversation">Clear</button>' +
           '</div>' +
         '</div>' +
-      '</div>' +
-      modalHtml;
+      '</div>';
 
     bindEvents();
   }
@@ -438,16 +425,35 @@ export function createCSVExplorer(containerEl, options) {
       });
     }
 
-    // Info modal
-    var infoBtn = containerEl.querySelector('#eda-info-btn');
-    var modal = containerEl.querySelector('#eda-modal-overlay');
-    var closeBtn = containerEl.querySelector('#eda-modal-close');
+    // Resizable panes
+    var resizer = containerEl.querySelector('#eda-resizer');
+    var layout = containerEl.querySelector('#eda-layout');
+    var leftPane = containerEl.querySelector('#eda-left-pane');
 
-    if (infoBtn && modal) {
-      infoBtn.addEventListener('click', function () { modal.classList.add('visible'); });
-      if (closeBtn) closeBtn.addEventListener('click', function () { modal.classList.remove('visible'); });
-      modal.addEventListener('click', function (e) {
-        if (e.target === modal) modal.classList.remove('visible');
+    if (resizer && layout && leftPane) {
+      var dragging = false;
+
+      resizer.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        dragging = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+
+      document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        var rect = layout.getBoundingClientRect();
+        var pct = ((e.clientX - rect.left) / rect.width) * 100;
+        pct = Math.max(15, Math.min(75, pct));
+        layout.style.gridTemplateColumns = pct + '% 6px 1fr';
+      });
+
+      document.addEventListener('mouseup', function () {
+        if (dragging) {
+          dragging = false;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
       });
     }
   }
