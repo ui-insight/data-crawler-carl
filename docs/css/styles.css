@@ -523,6 +523,8 @@ body {
   padding: 0.6rem 1rem;
   border-top: 1px solid var(--border);
   background: var(--card-bg);
+  position: relative;
+  z-index: 10;
 }
 .eda-input-row input {
   flex: 1;
@@ -823,29 +825,29 @@ body {
 
 .mongo-run {
   position: absolute;
-  bottom: -150px;
-  left: calc(50% - 70px);
-  height: 180px;
-  z-index: 100;
+  bottom: -140px;
+  left: calc(50% - 60px);
+  height: 140px;
+  z-index: 5;
   pointer-events: none;
   animation: mongo-zoom 5s ease-in-out forwards;
 }
 
 @keyframes mongo-zoom {
-  0%   { bottom: -150px; left: calc(50% - 70px); transform: scaleX(1); }
-  /* Rise up from below */
-  20%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(1); }
+  0%   { bottom: -140px; left: calc(50% - 60px); transform: scaleX(1); }
+  /* Rise up behind the input box */
+  20%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
   /* Looking right... */
-  32%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(1); }
+  32%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
   /* Flip to look left */
-  36%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(-1); }
+  36%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(-1); }
   /* Looking left... */
-  52%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(-1); }
+  52%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(-1); }
   /* Flip back to look right */
-  56%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(1); }
+  56%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
   /* Pause, then bolt! */
-  65%  { bottom: 50px;   left: calc(50% - 70px); transform: scaleX(1); }
-  100% { bottom: 50px;   left: calc(100% + 150px); transform: scaleX(1); }
+  65%  { bottom: 0;      left: calc(50% - 60px); transform: scaleX(1); }
+  100% { bottom: 0;      left: calc(100% + 140px); transform: scaleX(1); }
 }
 
 /* ── Responsive ── */
