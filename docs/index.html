@@ -50,10 +50,24 @@
       <div class="modal-dialog" style="max-width:600px;">
         <h2>How Data Crawler Carl Works</h2>
         <div style="font-size:0.95rem; line-height:1.7; color:#333;">
-          <p style="margin:0 0 0.6rem;"><strong>1. CSV &rarr; SQLite</strong> &mdash; When you upload a CSV file, it is parsed with <em>PapaParse</em> and loaded into an in-browser <em>SQLite</em> database powered by sql.js (WebAssembly). No data leaves your browser.</p>
-          <p style="margin:0 0 0.6rem;"><strong>2. AI Chat</strong> &mdash; Your questions are sent to <em>Google Gemini</em> along with a sample of the data and the column names. Gemini writes SQL queries and chart specs in its responses.</p>
-          <p style="margin:0 0 0.6rem;"><strong>3. Live SQL</strong> &mdash; Any <code>```sql</code> blocks in the AI response are automatically executed against your local SQLite database. Results appear inline in the chat.</p>
-          <p style="margin:0;"><strong>4. Safe Charts</strong> &mdash; Chart specs (<code>```chart</code> blocks) are parsed as JSON and rendered with <em>Plotly.js</em> using parameterized calls. Supports bar, scatter, line, pie, histogram, box, and heatmap charts &mdash; no arbitrary code execution.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">The AI Model</h3>
+          <p style="margin:0 0 0.8rem;">Carl is powered by <strong>Gemini 2.5 Flash</strong>, a large language model (LLM) from Google. LLMs work by predicting the most likely next token (word/symbol) given the conversation so far &mdash; they are sophisticated pattern-matching systems trained on vast amounts of text.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">How a Query Works</h3>
+          <p style="margin:0 0 0.3rem;"><strong>1. CSV &rarr; SQLite</strong> &mdash; When you upload a CSV, it is parsed with <em>PapaParse</em> and loaded into an in-browser <em>SQLite</em> database powered by <strong>sql.js</strong> (SQLite compiled to <strong>WebAssembly</strong>). No server, no backend &mdash; the full dataset never leaves your browser.</p>
+          <p style="margin:0 0 0.3rem;"><strong>2. Round 1 &mdash; AI writes SQL</strong> &mdash; Your question is sent to Gemini along with <em>only</em> the column names and a 5-row sample. Gemini responds with SQL queries to answer your question.</p>
+          <p style="margin:0 0 0.3rem;"><strong>3. Local execution</strong> &mdash; The SQL runs entirely in your browser against the local SQLite database. Results appear inline in the chat.</p>
+          <p style="margin:0 0 0.3rem;"><strong>4. Round 2 &mdash; AI analyzes real data</strong> &mdash; The actual query results are sent back to Gemini, which now provides analysis, insights, and chart specifications based on the real numbers.</p>
+          <p style="margin:0 0 0.8rem;"><strong>5. Safe Charts</strong> &mdash; Gemini provides a chart type, a SQL query, and column mappings. The system executes the SQL and renders the chart with <em>Plotly.js</em> using the real data. Supports bar, scatter, line, pie, histogram, box, and heatmap. No <code>eval()</code>, no arbitrary code execution.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">Security &amp; Privacy</h3>
+          <ul style="padding-left:1.3em; margin:0 0 0.5rem;">
+            <li><strong>Only column names + 5-row sample</strong> are sent to the Gemini API. The full dataset, all query results, and all chart data stay local.</li>
+            <li><strong>API key</strong> is held in session memory only &mdash; never saved to disk, cleared when you close the tab.</li>
+            <li><strong>Charts</strong> are rendered from safe JSON specs &mdash; no <code>eval()</code>, no <code>Function()</code>, no arbitrary code.</li>
+            <li><strong>No cookies, no tracking, no analytics.</strong></li>
+          </ul>
         </div>
         <button class="modal-close-btn" id="how-close">Got it</button>
       </div>
