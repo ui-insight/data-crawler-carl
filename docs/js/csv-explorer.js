@@ -192,19 +192,9 @@ export function createCSVExplorer(containerEl, options) {
 
   // ── Response processing ──
 
-  function stripHallucinatedResults(text) {
-    // Gemini often hallucinates fake query results as lines like:
-    // "Column: value, Column: value" or "Column: value, Column: value, ..."
-    // right after ```sql...``` blocks. Strip these phantom result blocks.
-    return text.replace(/```\n((?:[ \t]*\w[\w\s]*:\s*[\w\d$.,\-]+(?:,\s*\w[\w\s]*:\s*[\w\d$.,\-]+)*\s*\n){2,})/g, '```\n');
-  }
-
   function processResponse(responseText, messagesEl) {
     var div = document.createElement('div');
     div.className = 'eda-msg eda-msg-model';
-
-    // Strip hallucinated inline results that Gemini sometimes adds after SQL blocks
-    responseText = stripHallucinatedResults(responseText);
 
     // Render markdown
     var html = (typeof marked !== 'undefined' && marked.parse)
@@ -344,6 +334,26 @@ export function createCSVExplorer(containerEl, options) {
     return div;
   }
 
+  function formatResultsForAI(sqlBlocks) {
+    var parts = [];
+    sqlBlocks.forEach(function (block, i) {
+      parts.push('Query ' + (i + 1) + ': ' + block.sql);
+      if (block.error) {
+        parts.push('Error: ' + block.error);
+      } else if (block.columns.length > 0 && block.values.length > 0) {
+        // Format as a simple text table
+        parts.push(block.columns.join('\t'));
+        block.values.forEach(function (row) {
+          parts.push(row.map(function (v) { return v === null ? 'NULL' : String(v); }).join('\t'));
+        });
+      } else {
+        parts.push('(no results)');
+      }
+      parts.push('');
+    });
+    return parts.join('\n');
+  }
+
   async function sendMessage(text) {
     if (currentColumns.length === 0) {
       appendMessage('error', 'Please upload a CSV file first.');
@@ -361,12 +371,35 @@ export function createCSVExplorer(containerEl, options) {
     var systemPrompt = options.systemPromptBuilder(currentColumns, currentRowCount, currentCSVSample);
 
     try {
-      var response = await options.geminiCaller(systemPrompt, conversationHistory, text);
+      // ROUND 1: Ask Gemini for SQL queries
+      var round1 = await options.geminiCaller(systemPrompt, conversationHistory, text);
       conversationHistory.push({ role: 'user', text: text });
-      conversationHistory.push({ role: 'model', text: response });
+      conversationHistory.push({ role: 'model', text: round1 });
 
-      if (loadingEl) loadingEl.remove();
-      appendMessage('model', response);
+      // Execute any SQL blocks from round 1
+      var sqlBlocks = extractSQLBlocks(round1);
+
+      if (sqlBlocks.length > 0) {
+        // Show the SQL queries to the user (without analysis)
+        if (loadingEl) loadingEl.remove();
+        appendMessage('model', round1);
+        loadingEl = appendMessage('loading', '');
+
+        // ROUND 2: Send actual results back, ask for analysis + charts
+        var resultsText = formatResultsForAI(sqlBlocks);
+        var round2Prompt = 'Here are the actual query results from the database:\n\n' + resultsText + '\nNow analyze these results. Provide insights and create charts if appropriate. Use ONLY the numbers above — do not invent data.';
+
+        var round2 = await options.geminiCaller(systemPrompt, conversationHistory, round2Prompt);
+        conversationHistory.push({ role: 'user', text: round2Prompt });
+        conversationHistory.push({ role: 'model', text: round2 });
+
+        if (loadingEl) loadingEl.remove();
+        appendMessage('model', round2);
+      } else {
+        // No SQL needed — just show the response directly
+        if (loadingEl) loadingEl.remove();
+        appendMessage('model', round1);
+      }
     } catch (e) {
       if (loadingEl) loadingEl.remove();
       appendMessage('error', 'Error: ' + e.message);

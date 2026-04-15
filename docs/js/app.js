@@ -37,14 +37,21 @@ Here is a sample of the data (CSV format):
 
 ${csvSample}
 
-Guidelines:
-- Respond with clear, concise analysis formatted in markdown. Use tables, bullet points, and bold text.
-- Keep responses focused and under 400 words.
-- When analyzing monetary amounts, format them as currency ($125,000).
-- You can write SQL queries using SQLite syntax. Put them in \`\`\`sql code blocks and they will be auto-executed against the data.
-- CRITICAL: SQL queries are auto-executed and results appear inline right after each SQL block. You MUST NOT repeat, summarize, or restate query results in your text. Do NOT write markdown tables with result data. Do NOT list rows like "Department: X, Count: Y". The user already sees the real results — just refer to them naturally (e.g. "As shown above..." or "The results show that..."). Any numbers you write in prose MUST come from the actual query — do NOT guess or hallucinate values.
+## How this works — TWO-ROUND process
+
+You operate in a two-step loop. In each round:
+
+**ROUND 1 (you are here):** Write ONLY the SQL queries needed to answer the user's question. Put each query in a \`\`\`sql code block. Briefly explain what each query will check, but do NOT guess at results, do NOT include analysis, and do NOT create charts yet. The system will execute your queries against the real data and send you the actual results.
+
+**ROUND 2 (after you receive results):** You will receive the actual query results. NOW analyze the data, provide insights, and create charts if appropriate. Use ONLY the real numbers from the results provided. Never invent or hallucinate data.
+
+## SQL Guidelines
+- Use SQLite syntax only.
 - Do NOT use window functions (SQLite limitation). Use subqueries instead.
-- You can create charts by writing a JSON chart spec in a \`\`\`chart code block.
+- Write focused queries — prefer multiple simple queries over one complex one.
+
+## Chart Guidelines (ROUND 2 only)
+- Create charts by writing a JSON spec in a \`\`\`chart code block.
   Supported types: bar, scatter, line, pie, histogram, box, heatmap.
   Chart spec formats:
   - bar/scatter/line: { "type": "...", "x": [...], "y": [...], "title": "...", "xLabel": "...", "yLabel": "..." }
@@ -52,9 +59,13 @@ Guidelines:
   - histogram: { "type": "histogram", "x": [...], "title": "...", "xLabel": "..." }
   - box: { "type": "box", "y": [...], "x": [...optional grouping...], "title": "..." }
   - heatmap: { "type": "heatmap", "z": [[...], ...], "x": [...], "y": [...], "title": "..." }
-  Always hardcode the data arrays in chart specs (do not reference SQL results).
-- TRENDLINES: For any chart with numeric x/y data, you CAN add a trendline by including "trendline": true in the chart spec JSON. This overlays a linear regression line. Use it whenever the user asks for trends, correlations, or trendlines.
-- MODIFYING CHARTS: When the user asks to add a trendline, change a chart type, or modify a previous chart in any way, simply re-create the entire chart spec from scratch with the requested changes applied. You always have full control over chart output — just emit a new \`\`\`chart block with the updated spec.`;
+  Always hardcode the actual data values from the query results into chart specs.
+- TRENDLINES: Add "trendline": true to overlay a linear regression line.
+- To modify a chart, re-create the entire chart spec from scratch with changes applied.
+
+## Response style
+- Use markdown formatting. Keep responses under 400 words.
+- Format monetary amounts as currency ($125,000).`;
 }
 
 function setupApiKeyNav(explorer) {
