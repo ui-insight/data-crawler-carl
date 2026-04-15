@@ -47,26 +47,44 @@
     </div>
     <!-- How it works Modal -->
     <div id="how-modal" class="modal-overlay">
-      <div class="modal-dialog" style="max-width:600px;">
+      <div class="modal-dialog" style="max-width:700px;">
         <h2>How Data Crawler Carl Works</h2>
-        <div style="font-size:0.95rem; line-height:1.7; color:#333;">
+        <div style="font-size:0.93rem; line-height:1.7; color:#333;">
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">Architecture</h3>
+          <p style="margin:0 0 0.8rem;">Data Crawler Carl is a <strong>static website</strong> hosted on <strong>GitHub Pages</strong>. There is no backend server, no database server, no application server &mdash; the entire application is a collection of HTML, CSS, and JavaScript files served as static assets. Everything runs in your browser. The source code is <a href="https://github.com/ui-insight/data-crawler-carl" target="_blank" style="color:#f1b300; font-weight:600;">open source on GitHub</a>.</p>
 
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">The AI Model</h3>
-          <p style="margin:0 0 0.8rem;">Carl is powered by <strong>Gemini 2.5 Flash</strong>, a large language model (LLM) from Google. LLMs work by predicting the most likely next token (word/symbol) given the conversation so far &mdash; they are sophisticated pattern-matching systems trained on vast amounts of text.</p>
+          <p style="margin:0 0 0.5rem;">Carl uses <strong>Google Gemini 2.5 Flash</strong>, a large language model (LLM). LLMs work by predicting the most likely next token (word/symbol) given context &mdash; they are sophisticated pattern-matching systems trained on vast amounts of text. The browser communicates directly with the <strong>Google Generative AI API</strong> using the <code>@google/genai</code> JavaScript SDK (loaded from an ESM CDN). API calls go straight from your browser to Google &mdash; no proxy, no middleware.</p>
+          <p style="margin:0 0 0.8rem;">You provide your own API key, which is stored in <code>sessionStorage</code> (browser session memory). The key is never written to disk, never sent to any server other than Google's API, and is automatically cleared when you close the tab.</p>
 
-          <h3 style="margin:0 0 0.4rem; font-size:1rem;">How a Query Works</h3>
-          <p style="margin:0 0 0.3rem;"><strong>1. CSV &rarr; SQLite</strong> &mdash; When you upload a CSV, it is parsed with <em>PapaParse</em> and loaded into an in-browser <em>SQLite</em> database powered by <strong>sql.js</strong> (SQLite compiled to <strong>WebAssembly</strong>). No server, no backend &mdash; the full dataset never leaves your browser.</p>
-          <p style="margin:0 0 0.3rem;"><strong>2. Round 1 &mdash; AI writes SQL</strong> &mdash; Your question is sent to Gemini along with <em>only</em> the column names and a 5-row sample. Gemini responds with SQL queries to answer your question.</p>
-          <p style="margin:0 0 0.3rem;"><strong>3. Local execution</strong> &mdash; The SQL runs entirely in your browser against the local SQLite database. Results appear inline in the chat.</p>
-          <p style="margin:0 0 0.3rem;"><strong>4. Round 2 &mdash; AI analyzes real data</strong> &mdash; The actual query results are sent back to Gemini, which now provides analysis, insights, and chart specifications based on the real numbers.</p>
-          <p style="margin:0 0 0.8rem;"><strong>5. Safe Charts</strong> &mdash; Gemini provides a chart type, a SQL query, and column mappings. The system executes the SQL and renders the chart with <em>Plotly.js</em> using the real data. Supports bar, scatter, line, pie, histogram, box, and heatmap. No <code>eval()</code>, no arbitrary code execution.</p>
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">In-Browser SQL with WebAssembly</h3>
+          <p style="margin:0 0 0.8rem;">When you upload a CSV, it is parsed with <strong>PapaParse</strong> (a client-side CSV parser) and loaded into <strong>SQLite</strong> running entirely in your browser via <strong>sql.js</strong> &mdash; the full SQLite database engine compiled from C to <strong>WebAssembly</strong> (Wasm). WebAssembly lets native-speed code run in the browser sandbox. Your dataset lives in memory as a real SQLite database, supporting full SQL queries, aggregations, joins, and more &mdash; all locally, with zero network calls.</p>
 
-          <h3 style="margin:0 0 0.4rem; font-size:1rem;">Security &amp; Privacy</h3>
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">The Two-Round Conversation</h3>
+          <p style="margin:0 0 0.3rem;">Each question you ask triggers a two-round exchange designed to prevent hallucinated data:</p>
+          <p style="margin:0 0 0.3rem;"><strong>Round 1 &mdash; AI writes SQL:</strong> Your question is sent to Gemini along with <em>only</em> the column names and a 5-row sample of your data. Gemini responds with SQL queries &mdash; it never sees or guesses at the full dataset. The SQL is executed locally against your in-browser SQLite database and results appear inline.</p>
+          <p style="margin:0 0 0.3rem;"><strong>Round 2 &mdash; AI analyzes real data:</strong> The actual query results (real numbers from your database) are sent back to Gemini. Only now does it provide analysis, insights, and chart specifications &mdash; grounded in real data, not predictions.</p>
+          <p style="margin:0 0 0.8rem;">This separation means Gemini never fabricates statistics. It proposes <em>what to compute</em>; your browser computes it; then Gemini interprets the real results.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">Safe Chart Rendering</h3>
+          <p style="margin:0 0 0.8rem;">When Gemini wants to create a chart, it returns a <strong>declarative JSON spec</strong> containing a chart type, a SQL query, and column mappings (e.g. <em>"x maps to Department, y maps to avg_salary"</em>). The system executes the SQL itself, extracts the data, and renders the chart with <strong>Plotly.js</strong>. Gemini never provides raw data for charts and never generates executable code. There is no <code>eval()</code>, no <code>Function()</code> constructor, no dynamic script injection. Chart types are restricted to an allowlist (bar, scatter, line, pie, histogram, box, heatmap) and all values are sanitized before rendering.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">What Gets Sent to Google</h3>
           <ul style="padding-left:1.3em; margin:0 0 0.5rem;">
-            <li><strong>Only column names + 5-row sample</strong> are sent to the Gemini API. The full dataset, all query results, and all chart data stay local.</li>
-            <li><strong>API key</strong> is held in session memory only &mdash; never saved to disk, cleared when you close the tab.</li>
-            <li><strong>Charts</strong> are rendered from safe JSON specs &mdash; no <code>eval()</code>, no <code>Function()</code>, no arbitrary code.</li>
-            <li><strong>No cookies, no tracking, no analytics.</strong></li>
+            <li><strong>Column names</strong> and a <strong>5-row sample</strong> of your CSV (so Gemini understands the schema).</li>
+            <li><strong>Your natural-language questions</strong> and the conversation history.</li>
+            <li><strong>Actual query results</strong> in Round 2 (so Gemini can analyze them).</li>
+            <li><strong>Your API key</strong> (sent directly to Google's API endpoint for authentication).</li>
+          </ul>
+          <p style="margin:0 0 0.8rem;">The full dataset is <strong>never uploaded</strong>. All SQL execution, all chart data extraction, and all rendering happen locally.</p>
+
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">Security Summary</h3>
+          <ul style="padding-left:1.3em; margin:0 0 0.5rem;">
+            <li><strong>No server.</strong> Static GitHub Pages site &mdash; no backend, no database, no server-side code.</li>
+            <li><strong>No persistent storage.</strong> API key in sessionStorage only &mdash; cleared on tab close. No cookies, no localStorage.</li>
+            <li><strong>No code execution.</strong> Charts rendered from validated JSON specs. Property allowlists per chart type. All strings sanitized (HTML tags stripped).</li>
+            <li><strong>No tracking.</strong> No cookies, no analytics, no third-party scripts beyond the Gemini SDK and Plotly.js.</li>
           </ul>
         </div>
         <button class="modal-close-btn" id="how-close">Got it</button>
