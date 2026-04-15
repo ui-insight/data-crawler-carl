@@ -192,9 +192,19 @@ export function createCSVExplorer(containerEl, options) {
 
   // ── Response processing ──
 
+  function stripHallucinatedResults(text) {
+    // Gemini often hallucinates fake query results as lines like:
+    // "Column: value, Column: value" or "Column: value, Column: value, ..."
+    // right after ```sql...``` blocks. Strip these phantom result blocks.
+    return text.replace(/```\n((?:[ \t]*\w[\w\s]*:\s*[\w\d$.,\-]+(?:,\s*\w[\w\s]*:\s*[\w\d$.,\-]+)*\s*\n){2,})/g, '```\n');
+  }
+
   function processResponse(responseText, messagesEl) {
     var div = document.createElement('div');
     div.className = 'eda-msg eda-msg-model';
+
+    // Strip hallucinated inline results that Gemini sometimes adds after SQL blocks
+    responseText = stripHallucinatedResults(responseText);
 
     // Render markdown
     var html = (typeof marked !== 'undefined' && marked.parse)
