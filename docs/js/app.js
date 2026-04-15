@@ -53,13 +53,22 @@ You operate in a two-step loop. In each round:
 ## Chart Guidelines (ROUND 2 only)
 - Create charts by writing a JSON spec in a \`\`\`chart code block.
   Supported types: bar, scatter, line, pie, histogram, box, heatmap.
-  Chart spec formats:
-  - bar/scatter/line: { "type": "...", "x": [...], "y": [...], "title": "...", "xLabel": "...", "yLabel": "..." }
-  - pie: { "type": "pie", "labels": [...], "values": [...], "title": "..." }
-  - histogram: { "type": "histogram", "x": [...], "title": "...", "xLabel": "..." }
-  - box: { "type": "box", "y": [...], "x": [...optional grouping...], "title": "..." }
-  - heatmap: { "type": "heatmap", "z": [[...], ...], "x": [...], "y": [...], "title": "..." }
-  Always hardcode the actual data values from the query results into chart specs.
+- IMPORTANT: Do NOT hardcode data arrays. Instead, provide a SQL query and column mappings. The system executes the SQL and populates the chart with real data.
+  Chart spec format:
+  {
+    "type": "bar|scatter|line|pie|histogram|box|heatmap",
+    "sql": "SELECT ... FROM data ...",
+    "columns": { "x": "column_name", "y": "column_name" },
+    "title": "Chart Title",
+    "xLabel": "X Axis",
+    "yLabel": "Y Axis"
+  }
+  Column mappings per type:
+  - bar/scatter/line: { "x": "col", "y": "col" }
+  - pie: { "labels": "col", "values": "col" }
+  - histogram: { "x": "col" }
+  - box: { "y": "col" } or { "y": "col", "x": "col" } for grouped
+  - heatmap: { "x": "col", "y": "col", "z": "col" }
 - TRENDLINES: Add "trendline": true to overlay a linear regression line.
 - To modify a chart, re-create the entire chart spec from scratch with changes applied.
 

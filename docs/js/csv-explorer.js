@@ -289,6 +289,62 @@ export function createCSVExplorer(containerEl, options) {
     return results;
   }
 
+  function resolveChartSpec(spec) {
+    // If spec has a sql + columns mapping, execute the SQL and populate data arrays
+    if (spec.sql && spec.columns && sqlReady) {
+      try {
+        var result = executeSQL(spec.sql);
+        var cols = spec.columns;
+        var type = spec.type;
+
+        // Extract column data from SQL results
+        function getCol(name) {
+          var idx = result.columns.indexOf(name);
+          if (idx === -1) return null;
+          return result.values.map(function (row) { return row[idx]; });
+        }
+
+        if (type === 'pie') {
+          spec.labels = getCol(cols.labels) || [];
+          spec.values = getCol(cols.values) || [];
+        } else if (type === 'histogram') {
+          spec.x = getCol(cols.x) || [];
+        } else if (type === 'box') {
+          spec.y = getCol(cols.y) || [];
+          if (cols.x) spec.x = getCol(cols.x) || [];
+        } else if (type === 'heatmap') {
+          // For heatmap, pivot: unique x values as columns, unique y values as rows, z as the matrix
+          var xArr = getCol(cols.x) || [];
+          var yArr = getCol(cols.y) || [];
+          var zArr = getCol(cols.z) || [];
+          var uniqueX = []; var uniqueY = [];
+          xArr.forEach(function (v) { if (uniqueX.indexOf(v) === -1) uniqueX.push(v); });
+          yArr.forEach(function (v) { if (uniqueY.indexOf(v) === -1) uniqueY.push(v); });
+          var matrix = uniqueY.map(function () { return uniqueX.map(function () { return 0; }); });
+          for (var i = 0; i < xArr.length; i++) {
+            var xi = uniqueX.indexOf(xArr[i]);
+            var yi = uniqueY.indexOf(yArr[i]);
+            if (xi !== -1 && yi !== -1) matrix[yi][xi] = zArr[i];
+          }
+          spec.x = uniqueX;
+          spec.y = uniqueY;
+          spec.z = matrix;
+        } else {
+          // bar, scatter, line
+          spec.x = getCol(cols.x) || [];
+          spec.y = getCol(cols.y) || [];
+        }
+
+        // Remove sql/columns so isValidChartSpec checks the data arrays
+        delete spec.sql;
+        delete spec.columns;
+      } catch (e) {
+        return { error: 'Chart SQL error: ' + e.message };
+      }
+    }
+    return spec;
+  }
+
   function extractChartBlocks(text) {
     var regex = /```chart\n([\s\S]*?)```/g;
     var results = [];
@@ -296,10 +352,13 @@ export function createCSVExplorer(containerEl, options) {
     while ((match = regex.exec(text)) !== null) {
       try {
         var spec = JSON.parse(match[1].trim());
-        if (isValidChartSpec(spec)) {
+        spec = resolveChartSpec(spec);
+        if (spec.error) {
+          results.push(spec);
+        } else if (isValidChartSpec(spec)) {
           results.push(spec);
         } else {
-          results.push({ error: 'Invalid chart spec: need type (bar/scatter), x array, y array' });
+          results.push({ error: 'Invalid chart spec' });
         }
       } catch (e) {
         results.push({ error: 'Could not parse chart JSON: ' + e.message });
