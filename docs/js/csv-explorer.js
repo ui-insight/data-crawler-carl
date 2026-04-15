@@ -446,7 +446,7 @@ export function createCSVExplorer(containerEl, options) {
 
         // ROUND 2: Send actual results back, ask for analysis + charts
         var resultsText = formatResultsForAI(sqlBlocks);
-        var round2Prompt = 'Here are the actual query results from the database:\n\n' + resultsText + '\nNow analyze these results. Provide insights and create charts if appropriate. Use ONLY the numbers above — do not invent data.';
+        var round2Prompt = 'ROUND 2 — Here are the ACTUAL query results executed against the real database. These are the ONLY correct values:\n\n' + resultsText + '\nIMPORTANT: The numbers above are the ground truth. Do NOT use any other numbers. Do NOT recalculate, round, or modify these values. Reference them exactly as shown.\n\nNow analyze these results. Provide insights and create charts if appropriate. For charts, use the sql + columns format described in the guidelines.';
 
         var round2 = await options.geminiCaller(systemPrompt, conversationHistory, round2Prompt);
         conversationHistory.push({ role: 'user', text: round2Prompt });
