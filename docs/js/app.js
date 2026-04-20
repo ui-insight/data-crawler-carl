@@ -194,6 +194,17 @@ function init() {
 
   setupApiKeyNav(explorer);
   setupNavModals();
+  setupWelcomeModal();
+}
+
+function setupWelcomeModal() {
+  var modal = document.getElementById('welcome-modal');
+  var dismiss = document.getElementById('welcome-dismiss');
+  if (!modal || !dismiss) return;
+  dismiss.addEventListener('click', function () { modal.classList.remove('visible'); });
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) modal.classList.remove('visible');
+  });
 }
 
 function setupNavModals() {
