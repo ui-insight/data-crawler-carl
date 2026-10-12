@@ -30,3 +30,9 @@ Pass via URL: `?key=YOUR_KEY` (stored in sessionStorage, stripped from URL, clea
 ## Part of the AI4RA Workshop
 
 Used as an interactive activity in the [REACH 2026 AI4RA Workshop](https://ui-insight.github.io/REACHWorkshop2026/) — Data Lakehouse session.
+
+## License
+
+Copyright 2026 Nathan Layman.
+
+Licensed under the [Apache License, Version 2.0](LICENSE). The [NOTICE](NOTICE) file carries the author attribution. Under Section 4(d) of the license, anyone who redistributes this software or a derivative work must keep that attribution. To cite the project, use [CITATION.cff](CITATION.cff).
