@@ -43,6 +43,18 @@ Copyright 2026 Nathan Layman.
 
 Licensed under the [Apache License, Version 2.0](LICENSE). The [NOTICE](NOTICE) file carries four attributions: Nathan Layman as the author, the University of Idaho, the AI4RA project, and the National Science Foundation award that funded the work. Under Section 4(d) of the license, anyone who redistributes this software or a derivative work must keep all four. To cite the project, use [CITATION.cff](CITATION.cff).
 
+## Third-party software
+
+The site loads these open source libraries from public CDNs. Each stays under its own license; full notices are in [NOTICE](NOTICE).
+
+| Library | Use | License |
+|---|---|---|
+| [PapaParse](https://github.com/mholt/PapaParse) 5.4.1 | CSV parsing | MIT |
+| [sql.js](https://github.com/sql-js/sql.js) 1.10.3 | SQLite in WebAssembly (SQLite itself is public domain) | MIT |
+| [Plotly.js](https://github.com/plotly/plotly.js) 2.35.2 | Charts | MIT |
+| [marked](https://github.com/markedjs/marked) | Markdown rendering | MIT |
+| [@google/genai](https://github.com/googleapis/js-genai) | Gemini SDK | Apache-2.0 |
+
 ## Acknowledgments
 
 Data Crawler Carl is a project of [AI4RA](https://github.com/AI4RA) at the University of Idaho. This material is based upon work supported by the National Science Foundation under the GRANTED program, [NSF Award #2427549](https://www.nsf.gov/awardsearch/show-award?AWD_ID=2427549), "Crossing the Innovation Valley of Death: Democratizing Data and Artificial Intelligence for Research Administration." Any opinions, findings, conclusions or recommendations expressed in this material are those of the author and do not necessarily reflect the views of the National Science Foundation.
