@@ -20,3 +20,31 @@ work, must include a readable copy of the attribution notices above, crediting
 all of the following: Nathan Layman as the author, the University of
 Idaho, the AI4RA project, and National Science Foundation award 2427549.
 
+------------------------------------------------------------------------
+Third-party software
+
+Data Crawler Carl loads the following open source libraries in the
+browser from public CDNs. Each remains under its own license and
+copyright; none is modified or redistributed by this project.
+
+PapaParse 5.4.1 (CSV parsing)
+  Copyright (c) 2015 Matthew Holt
+  MIT License - https://github.com/mholt/PapaParse/blob/master/LICENSE
+
+sql.js 1.10.3 (SQLite compiled to WebAssembly)
+  Copyright (c) 2017 sql.js authors
+  MIT License - https://github.com/sql-js/sql.js/blob/master/LICENSE
+  SQLite itself is in the public domain - https://sqlite.org/copyright.html
+
+Plotly.js 2.35.2, basic bundle (charts)
+  Copyright (c) 2016-2024 Plotly, Inc.
+  MIT License - https://github.com/plotly/plotly.js/blob/master/LICENSE
+
+marked (Markdown rendering)
+  Copyright (c) 2018+ MarkedJS; Copyright (c) 2011-2018 Christopher Jeffrey
+  MIT License - https://github.com/markedjs/marked/blob/master/LICENSE.md
+
+@google/genai (Google Gen AI JavaScript SDK)
+  Copyright 2025 Google LLC
+  Apache License 2.0 - https://github.com/googleapis/js-genai/blob/main/LICENSE
+
