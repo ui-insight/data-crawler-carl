@@ -1,6 +1,6 @@
 // Data Crawler Carl — standalone app config
 import { getKey, setKey, readKeyFromURL } from './key-manager.js';
-import { initAPI, hasAPIKey, callGemini } from './gemini-api.js';
+import { initAPI, hasAPIKey, callModel, backendName } from './gemini-api.js';
 import { createCSVExplorer } from './csv-explorer.js';
 
 // Sample dataset for quick demo
@@ -97,7 +97,7 @@ function setupApiKeyNav(explorer) {
   function updateStatus() {
     if (hasAPIKey()) {
       dot.classList.add('connected');
-      status.textContent = 'Key is set for this session.';
+      status.textContent = backendName(getKey()) + ' key is set for this session.';
       status.className = 'api-key-status ok';
       input.value = '';
       input.placeholder = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (saved)';
@@ -137,7 +137,7 @@ function setupApiKeyNav(explorer) {
           systemPromptBuilder: buildSystemPrompt,
           presetPrompts: GENERIC_PRESETS,
           onDataChange: function () { return GENERIC_PRESETS; },
-          geminiCaller: callGemini,
+          geminiCaller: callModel,
           hasKey: hasAPIKey,
           getKey: getKey,
           setKey: setKey,
@@ -177,7 +177,7 @@ function init() {
     onDataChange: function () {
       return GENERIC_PRESETS;
     },
-    geminiCaller: callGemini,
+    geminiCaller: callModel,
     hasKey: hasAPIKey,
     getKey: getKey,
     setKey: setKey,

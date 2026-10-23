@@ -1,0 +1,39 @@
+# CORS for the Data Crawler Carl GitHub Pages site, which calls MindRouter
+# through this host from the browser. Promptulus (https://ai4ra.github.io) uses
+# the same route and already has a matcher in /etc/caddy/Caddyfile on
+# nlayman-external; Carl lives on a different Pages origin, so the proxy needs
+# to allow https://ui-insight.github.io as well.
+#
+# Caddy's `header` directive takes a single static value, so the way to allow
+# two origins is to replace the Promptulus-only stanza with one that matches
+# either origin and echoes the request's Origin back. Put this inside the site
+# block ABOVE the existing `handle @api` block (handle blocks are evaluated in
+# order, and the preflight must be answered before the proxy sees it). Then:
+# sudo systemctl reload caddy
+
+@pages_origin {
+    header Origin https://ai4ra.github.io
+    header Origin https://ui-insight.github.io
+}
+@pages_preflight {
+    method OPTIONS
+    path /v1/*
+    header Origin https://ai4ra.github.io
+    header Origin https://ui-insight.github.io
+}
+handle @pages_preflight {
+    header Access-Control-Allow-Origin "{http.request.header.Origin}"
+    header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    header Access-Control-Allow-Headers "Authorization, Content-Type"
+    header Access-Control-Max-Age "600"
+    header Vary "Origin"
+    respond 204
+}
+
+# And inside the existing `handle @api { ... }` block, before `reverse_proxy`,
+# replace the Promptulus-only header lines with these so actual responses carry
+# the header for either origin. The `>` defers the header until the proxied
+# response is written.
+#
+#     header @pages_origin >Access-Control-Allow-Origin "{http.request.header.Origin}"
+#     header @pages_origin >Vary "Origin"

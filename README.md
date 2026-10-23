@@ -25,6 +25,8 @@ python3 -m http.server 4173 -d docs
 
 Requires a [Google Gemini API key](https://aistudio.google.com/app/apikey) (free tier works).
 
+Facilitators only: a University of Idaho MindRouter key (prefix `mr2_`) pasted or passed via `?key=...` is routed to the University's own models through the lakehouse proxy instead of Google. The site does not advertise this; mint a workshop-specific MindRouter key and revoke it afterward.
+
 Pass via URL: `?key=YOUR_KEY` (stored in sessionStorage, stripped from URL, cleared on tab close).
 
 ## Part of the AI4RA Workshop
