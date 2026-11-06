@@ -77,10 +77,35 @@ body {
   font-weight: 400;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header { flex: none; }
+
 .app-body {
-  height: calc(100vh - 52px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 0;
 }
+
+/* Shown on the opening screen only: once data loads, the workspace needs the room. */
+.app-footer {
+  flex: none;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.app-footer p { margin: 0 0 0.2rem; }
+.app-footer p:last-child { margin-bottom: 0; }
+.app-footer a { color: #7a5a00; }
+body:has(.eda-table) .app-footer { display: none; }
 
 /* ── Two-column layout ── */
 .eda-layout {
