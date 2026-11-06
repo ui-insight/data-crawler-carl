@@ -1,5 +1,5 @@
 // csv-explorer.js — Reusable CSV data analysis component
-// Dependencies: sql-engine.js, chart-renderer.js, gemini-api.js, key-manager.js
+// Dependencies: sql-engine.js, chart-renderer.js, api.js, key-manager.js
 // CDN globals: marked, Papa, initSqlJs, Plotly
 
 import { initSQLEngine, isReady as isSQLReady, loadCSV, executeSQL } from './sql-engine.js';
@@ -13,7 +13,7 @@ import { renderChart, isValidChartSpec } from './chart-renderer.js';
  * @param {function} options.systemPromptBuilder - (columns, rowCount, csvSample) => string
  * @param {Array} options.presetPrompts - [{label, text}]
  * @param {function} [options.onDataChange] - (columns, rowCount) => new presets array or void
- * @param {function} options.geminiCaller - (systemPrompt, history, message) => Promise<string>
+ * @param {function} options.modelCaller -(systemPrompt, history, message) => Promise<string>
  * @param {function} options.hasKey - () => boolean
  * @param {function} options.getKey - () => string
  * @param {function} options.setKey - (key) => void
@@ -79,7 +79,7 @@ export function createCSVExplorer(containerEl, options) {
   function renderNoKey() {
     containerEl.innerHTML =
       '<div class="eda-no-key">' +
-        '<p>A Gemini API key is required to use the AI chat.</p>' +
+        '<p>An API key (Google Gemini, OpenAI, Anthropic Claude, or OpenRouter) is required to use the AI chat.</p>' +
         '<p>Click <strong>API Key</strong> in the top bar to set one, or use a link with <code>?key=</code>.</p>' +
         '<div class="eda-key-inline">' +
           '<input type="password" id="eda-key-input" placeholder="Or paste key here..." />' +
@@ -430,8 +430,8 @@ export function createCSVExplorer(containerEl, options) {
     var systemPrompt = options.systemPromptBuilder(currentColumns, currentRowCount, currentCSVSample);
 
     try {
-      // ROUND 1: Ask Gemini for SQL queries
-      var round1 = await options.geminiCaller(systemPrompt, conversationHistory, text);
+      // ROUND 1: Ask the model for SQL queries
+      var round1 = await options.modelCaller(systemPrompt, conversationHistory, text);
       conversationHistory.push({ role: 'user', text: text });
       conversationHistory.push({ role: 'model', text: round1 });
 
@@ -448,7 +448,7 @@ export function createCSVExplorer(containerEl, options) {
         var resultsText = formatResultsForAI(sqlBlocks);
         var round2Prompt = 'ROUND 2 — Here are the ACTUAL query results executed against the real database. These are the ONLY correct values:\n\n' + resultsText + '\nIMPORTANT: The numbers above are the ground truth. Do NOT use any other numbers. Do NOT recalculate, round, or modify these values. Reference them exactly as shown.\n\nNow analyze these results. Provide insights and create charts if appropriate. For charts, use the sql + columns format described in the guidelines.';
 
-        var round2 = await options.geminiCaller(systemPrompt, conversationHistory, round2Prompt);
+        var round2 = await options.modelCaller(systemPrompt, conversationHistory, round2Prompt);
         conversationHistory.push({ role: 'user', text: round2Prompt });
         conversationHistory.push({ role: 'model', text: round2 });
 

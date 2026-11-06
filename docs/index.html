@@ -27,9 +27,9 @@
     <div id="welcome-modal" class="modal-overlay visible">
       <div class="modal-dialog" style="max-width:600px;">
         <h2>Welcome to Data Crawler Carl</h2>
-        <p style="line-height:1.7; margin:0 0 0.8rem;">This is a <strong>workshop demo</strong> for exploring CSV data with AI. The app runs entirely in your browser &mdash; no data is stored on any server and the full dataset never leaves your device.</p>
-        <p style="line-height:1.7; margin:0 0 0.8rem;"><strong>However</strong>, your questions, column names, a 5-row sample of your data, and actual SQL query results <em>are sent to Google Gemini</em> for processing. Anything you ask Carl about passes through Google's infrastructure.</p>
-        <p style="line-height:1.7; margin:0 0 0.8rem; padding:0.7rem 0.9rem; background:rgba(239,68,68,0.08); border-left:3px solid #ef4444; border-radius:4px;"><strong>Do not upload sensitive, confidential, proprietary, or personally identifiable data</strong> unless your institution has an enterprise-grade data processing agreement with Google <em>and</em> you have independently reviewed how that data is handled in flight. When in doubt, use synthetic, anonymized, or public example data.</p>
+        <p style="line-height:1.7; margin:0 0 0.8rem;">This is a <strong>demo</strong> for exploring CSV data with AI. The app runs entirely in your browser &mdash; no data is stored on any server and the full dataset never leaves your device.</p>
+        <p style="line-height:1.7; margin:0 0 0.8rem;"><strong>However</strong>, your questions, column names, a 5-row sample of your data, and actual SQL query results <em>are sent to the AI provider that issued your API key</em> (Google Gemini, OpenAI, Anthropic Claude, or OpenRouter) for processing. Anything you ask Carl about passes through that provider's infrastructure. OpenRouter also forwards it to the model's own provider.</p>
+        <p style="line-height:1.7; margin:0 0 0.8rem; padding:0.7rem 0.9rem; background:rgba(239,68,68,0.08); border-left:3px solid #ef4444; border-radius:4px;"><strong>Do not upload sensitive, confidential, proprietary, or personally identifiable data</strong> unless your institution has an enterprise-grade data processing agreement with that provider <em>and</em> you have independently reviewed how that data is handled in flight. When in doubt, use synthetic, anonymized, or public example data.</p>
         <button class="modal-close-btn" id="welcome-dismiss" onclick="document.getElementById('welcome-modal').classList.remove('visible')">I understand</button>
       </div>
     </div>
@@ -37,22 +37,31 @@
     <!-- API Key Modal -->
     <div id="api-key-modal" class="modal-overlay">
       <div class="modal-dialog">
-        <h2>Gemini API Key</h2>
+        <h2>API Key</h2>
         <div class="api-key-input-section">
           <div class="api-key-row">
-            <input type="password" id="api-key-input" placeholder="Paste your Gemini API key here..." />
+            <input type="password" id="api-key-input" placeholder="Paste your API key here..." />
             <button id="api-key-save" class="eda-btn">Save</button>
           </div>
           <div class="api-key-status" id="api-key-status"></div>
         </div>
-        <h3>How to get a free API key</h3>
+        <h3>How to get a free Gemini API key</h3>
         <ol>
           <li>Visit <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> and sign in with your Google account.</li>
-          <li>Click <strong>Create API Key</strong> and select a Google Cloud project (or let it create one).</li>
-          <li>Copy the generated key and paste it into the field above.</li>
+          <li>On a first visit, AI Studio creates a project and a key for you. Otherwise, click <strong>Create API Key</strong> and pick a project with <strong>no billing account attached</strong>.</li>
+          <li>Copy the key and paste it into the field above.</li>
         </ol>
-        <p class="api-key-privacy">Your key is stored only in your browser's session memory &mdash; it is never saved to disk or sent anywhere except directly to Google's API. It is cleared when you close the tab.</p>
-        <p class="api-key-facilitator"><strong>Workshop facilitators:</strong> Pre-fill keys for attendees by sharing a link with <code>?key=YOUR_KEY</code> appended.</p>
+        <h3>About the free tier</h3>
+        <ul>
+          <li><strong>No cost, no credit card, no application.</strong> A project without a billing account stays on the free tier. If you link billing to the project, usage is charged at paid rates.</li>
+          <li><strong>You may need to verify.</strong> Google asks for a quick phone check on some free projects, usually additional ones or those created outside AI Studio. If so, Carl shows Google's error with a link: scan the QR code, then try again. See <a href="https://ai.google.dev/gemini-api/docs/verification" target="_blank">Google's verification page</a>.</li>
+          <li><strong>Rate limits.</strong> Free keys allow a limited number of requests per minute and per day, and most questions to Carl use two requests. If Carl stops responding, wait a minute and try again. Current limits are on <a href="https://ai.google.dev/gemini-api/docs/rate-limits" target="_blank">Google's rate limits page</a>.</li>
+          <li><strong>Your inputs may be reviewed.</strong> On the free tier, Google may use what you send and the responses to improve its products, and human reviewers may read them. That includes your data sample and query results, so do not use sensitive data.</li>
+          <li><strong>Who can use it.</strong> Google's terms require users to be 18 or older, and some regions have extra restrictions. See the <a href="https://ai.google.dev/gemini-api/terms" target="_blank">Gemini API terms</a>.</li>
+        </ul>
+        <h3>Using another provider's key</h3>
+        <p>You can also paste an <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI key</a> (starts with <code>sk-</code>), an <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic key</a> (<code>sk-ant-</code>), or an <a href="https://openrouter.ai/keys" target="_blank">OpenRouter key</a> (<code>sk-or-</code>). Carl recognizes the key and sends it only to that company. These are not free: every message is billed to the account that owns the key. A ChatGPT or Claude chat subscription does not include an API key.</p>
+        <p class="api-key-privacy">Your key is stored only in your browser's session memory &mdash; it is never saved to disk or sent anywhere except directly to the provider that issued it. It is cleared when you close the tab.</p>
         <button class="modal-close-btn" id="api-key-close">Done</button>
       </div>
     </div>
@@ -64,11 +73,11 @@
 
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">Architecture</h3>
           <p style="margin:0 0 0.5rem;">Data Crawler Carl is a <strong>static website</strong> hosted on <strong>GitHub Pages</strong>. There is no backend server, no database server, no application server &mdash; the entire application is a collection of HTML, CSS, and JavaScript files served as static assets. Everything runs in your browser. The source code is <a href="https://github.com/ui-insight/data-crawler-carl" target="_blank" style="color:#f1b300; font-weight:600;">open source on GitHub</a>.</p>
-          <p style="margin:0 0 0.8rem;"><strong>Why this architecture?</strong> By running everything client-side, we get a fully dynamic AI-powered application hosted for free with zero infrastructure. There are no servers to maintain, no scaling concerns, and critically &mdash; <strong>no concurrency issues</strong>. During a workshop with 50+ participants all using the tool simultaneously, each person's browser runs its own independent instance. There is no shared server that could become a bottleneck or crash under load.</p>
+          <p style="margin:0 0 0.8rem;"><strong>Why this architecture?</strong> By running everything client-side, we get a fully dynamic AI-powered application hosted for free with zero infrastructure. There are no servers to maintain, no scaling concerns, and critically &mdash; <strong>no concurrency issues</strong>. However many people use the tool at once, each person's browser runs its own independent instance. There is no shared server that could become a bottleneck or crash under load.</p>
 
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">The AI Model</h3>
-          <p style="margin:0 0 0.5rem;">Carl uses <strong>Google Gemini 2.5 Flash</strong>, a large language model (LLM). LLMs work by predicting the most likely next token (word/symbol) given context &mdash; they are sophisticated pattern-matching systems trained on vast amounts of text. The browser communicates directly with the <strong>Google Generative AI API</strong> using the <code>@google/genai</code> JavaScript SDK (loaded from an ESM CDN). API calls go straight from your browser to Google &mdash; no proxy, no middleware.</p>
-          <p style="margin:0 0 0.8rem;">You provide your own API key, which is stored in <code>sessionStorage</code> (browser session memory). The key is never written to disk, never sent to any server other than Google's API, and is automatically cleared when you close the tab.</p>
+          <p style="margin:0 0 0.5rem;">Carl uses a large language model (LLM), chosen by your API key: <strong>Google Gemini 3.5 Flash-Lite</strong> for a Gemini key, <strong>GPT-6 Luna</strong> for an OpenAI key, and <strong>Claude Haiku 5.5</strong> for an Anthropic or OpenRouter key. LLMs work by predicting the most likely next token (word/symbol) given context &mdash; they are sophisticated pattern-matching systems trained on vast amounts of text. The browser communicates directly with the provider's API, using the <code>@google/genai</code> or <code>@anthropic-ai/sdk</code> JavaScript SDK (loaded from an ESM CDN) for Gemini and Anthropic, and plain <code>fetch</code> for OpenAI and OpenRouter. Carl adds no proxy or middleware of its own; OpenRouter is itself a gateway that forwards requests to the model's provider.</p>
+          <p style="margin:0 0 0.8rem;">You provide your own API key, which is stored in <code>sessionStorage</code> (browser session memory). The key is never written to disk, never sent to any server other than the API of the provider that issued it, and is automatically cleared when you close the tab.</p>
 
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">CSV &rarr; SQLite Pipeline</h3>
           <p style="margin:0 0 0.5rem;">When you upload a CSV file, three JavaScript libraries work together to make it queryable:</p>
@@ -79,24 +88,24 @@
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">The Two-Round Conversation &mdash; Minimizing Hallucinations</h3>
           <p style="margin:0 0 0.5rem;">LLMs are prone to <strong>hallucination</strong> &mdash; confidently generating plausible-sounding but factually incorrect information. This is especially dangerous in data analysis, where a model might invent statistics, fabricate trends, or report numbers that don't exist in the dataset. A naive approach (sending all the data to the AI and asking it to analyze) produces results that <em>look</em> authoritative but may be partly or entirely made up.</p>
           <p style="margin:0 0 0.5rem;">Carl's two-round architecture is designed to <strong>minimize</strong> (but not eliminate) this problem by separating <em>what to compute</em> from <em>computing it</em>:</p>
-          <p style="margin:0 0 0.3rem;"><strong>Round 1 &mdash; AI writes SQL:</strong> Your question is sent to Gemini along with <em>only</em> the column names and a 5-row sample. Gemini's job is strictly to write SQL queries &mdash; it never sees the full dataset and is explicitly instructed not to guess at results. The SQL is executed locally against your in-browser SQLite database, producing real, verified results.</p>
-          <p style="margin:0 0 0.3rem;"><strong>Round 2 &mdash; AI analyzes real data:</strong> The actual query results (real numbers from your database) are sent back to Gemini. Only now does it provide analysis, insights, and chart specifications &mdash; grounded in data that was computed locally, not predicted.</p>
+          <p style="margin:0 0 0.3rem;"><strong>Round 1 &mdash; AI writes SQL:</strong> Your question is sent to the model along with <em>only</em> the column names and a 5-row sample. The model's job is strictly to write SQL queries &mdash; it never sees the full dataset and is explicitly instructed not to guess at results. The SQL is executed locally against your in-browser SQLite database, producing real, verified results.</p>
+          <p style="margin:0 0 0.3rem;"><strong>Round 2 &mdash; AI analyzes real data:</strong> The actual query results (real numbers from your database) are sent back to the model. Only now does it provide analysis, insights, and chart specifications &mdash; grounded in data that was computed locally, not predicted.</p>
           <p style="margin:0 0 0.5rem;">This separation means every number you see in a query result table was computed by SQLite on your actual data. The AI's role is reduced to two things it's good at: <em>translating natural language into SQL</em> and <em>interpreting real results in plain English</em>.</p>
-          <p style="margin:0 0 0.8rem;"><strong>Limitations:</strong> This approach does not eliminate hallucination entirely. Gemini can still write incorrect SQL (wrong joins, bad filters, misunderstood column semantics), misinterpret results in its prose, or draw conclusions the data doesn't support. The two-round design makes these errors <em>auditable</em> &mdash; you can always see the SQL that ran and the actual results it produced &mdash; but critical findings should still be verified independently.</p>
+          <p style="margin:0 0 0.8rem;"><strong>Limitations:</strong> This approach does not eliminate hallucination entirely. The model can still write incorrect SQL (wrong joins, bad filters, misunderstood column semantics), misinterpret results in its prose, or draw conclusions the data doesn't support. The two-round design makes these errors <em>auditable</em> &mdash; you can always see the SQL that ran and the actual results it produced &mdash; but critical findings should still be verified independently.</p>
 
           <h3 style="margin:0 0 0.4rem; font-size:1rem;">Safe Chart Rendering with Plotly.js</h3>
           <p style="margin:0 0 0.5rem;"><strong>Plotly.js</strong> is an open-source JavaScript charting library. Normally you call <code>Plotly.newPlot(element, traces, layout)</code> with arrays of data. Carl uses a secure pipeline that separates the AI from the data and from the rendering:</p>
-          <p style="margin:0 0 0.3rem;"><strong>1. Gemini returns a spec:</strong> A declarative JSON object with a chart type, a SQL query, and column mappings &mdash; e.g. <code>{"type": "bar", "sql": "SELECT Dept, AVG(Salary) as avg FROM data GROUP BY Dept", "columns": {"x": "Dept", "y": "avg"}}</code>. Gemini never provides the actual data values.</p>
+          <p style="margin:0 0 0.3rem;"><strong>1. The model returns a spec:</strong> A declarative JSON object with a chart type, a SQL query, and column mappings &mdash; e.g. <code>{"type": "bar", "sql": "SELECT Dept, AVG(Salary) as avg FROM data GROUP BY Dept", "columns": {"x": "Dept", "y": "avg"}}</code>. The model never provides the actual data values.</p>
           <p style="margin:0 0 0.3rem;"><strong>2. We execute the SQL:</strong> The chart's SQL query is run against the local SQLite database using <code>db.exec()</code>. The result columns are mapped to Plotly trace properties (x, y, labels, values, etc.) based on the column mappings.</p>
           <p style="margin:0 0 0.3rem;"><strong>3. We build the Plotly trace:</strong> A dedicated <code>buildTrace()</code> function constructs the Plotly trace object. Only allowlisted properties are copied &mdash; the function has a hard-coded set of safe fields per chart type. All string values pass through <code>sanitizeString()</code> (strips HTML tags) and all arrays pass through <code>sanitizeArray()</code> (rejects anything that isn't a primitive value).</p>
-          <p style="margin:0 0 0.8rem;"><strong>4. We call Plotly:</strong> The sanitized trace and a layout object (constructed by us, not Gemini) are passed to <code>Plotly.newPlot()</code>. The chart types are restricted to an allowlist: bar, scatter, line, pie, histogram, box, and heatmap. There is no <code>eval()</code>, no <code>Function()</code> constructor, no dynamic script injection at any point in this pipeline.</p>
+          <p style="margin:0 0 0.8rem;"><strong>4. We call Plotly:</strong> The sanitized trace and a layout object (constructed by us, not the model) are passed to <code>Plotly.newPlot()</code>. The chart types are restricted to an allowlist: bar, scatter, line, pie, histogram, box, and heatmap. There is no <code>eval()</code>, no <code>Function()</code> constructor, no dynamic script injection at any point in this pipeline.</p>
 
-          <h3 style="margin:0 0 0.4rem; font-size:1rem;">What Gets Sent to Google</h3>
+          <h3 style="margin:0 0 0.4rem; font-size:1rem;">What Gets Sent to the AI Provider</h3>
           <ul style="padding-left:1.3em; margin:0 0 0.5rem;">
-            <li><strong>Column names</strong> and a <strong>5-row sample</strong> of your CSV (so Gemini understands the schema).</li>
+            <li><strong>Column names</strong> and a <strong>5-row sample</strong> of your CSV (so the model understands the schema).</li>
             <li><strong>Your natural-language questions</strong> and the conversation history.</li>
-            <li><strong>Actual query results</strong> in Round 2 (so Gemini can analyze them).</li>
-            <li><strong>Your API key</strong> (sent directly to Google's API endpoint for authentication).</li>
+            <li><strong>Actual query results</strong> in Round 2 (so the model can analyze them).</li>
+            <li><strong>Your API key</strong> (sent directly to that provider's API endpoint for authentication).</li>
           </ul>
           <p style="margin:0 0 0.8rem;">The full dataset is <strong>never uploaded</strong>. All SQL execution, all chart data extraction, and all rendering happen locally.</p>
 
@@ -105,7 +114,7 @@
             <li><strong>No server.</strong> Static GitHub Pages site &mdash; no backend, no database, no server-side code.</li>
             <li><strong>No persistent storage.</strong> API key in sessionStorage only &mdash; cleared on tab close. No cookies, no localStorage.</li>
             <li><strong>No code execution.</strong> Charts rendered from validated JSON specs. Property allowlists per chart type. All strings sanitized (HTML tags stripped).</li>
-            <li><strong>No tracking.</strong> No cookies, no analytics, no third-party scripts beyond the Gemini SDK and Plotly.js.</li>
+            <li><strong>No tracking.</strong> No cookies, no analytics, no third-party scripts beyond the provider SDKs (Gemini or Anthropic, loaded only for that key) and Plotly.js.</li>
           </ul>
         </div>
         <button class="modal-close-btn" id="how-close">Got it</button>
@@ -129,17 +138,14 @@
         <h3>Privacy &amp; Security</h3>
         <ul style="line-height:1.8; padding-left:1.3em; margin:0 0 1rem;">
           <li><strong>Your data stays local.</strong> CSV files are parsed and queried entirely in your browser using WebAssembly (sql.js). No data is uploaded to any server.</li>
-          <li><strong>Only the schema is sent to AI.</strong> Column names and a small sample (first 5 rows) are sent to Google Gemini to provide context for your questions.</li>
-          <li><strong>API key is session-only.</strong> Your Gemini API key is held in session memory and cleared when you close or reload the tab. It is never saved to disk.</li>
+          <li><strong>Only the schema is sent to AI.</strong> Column names and a small sample (first 5 rows) are sent to the AI provider that issued your key to provide context for your questions.</li>
+          <li><strong>API key is session-only.</strong> Your API key is held in session memory and cleared when you close or reload the tab. It is never saved to disk.</li>
           <li><strong>No code execution.</strong> Charts are rendered from safe JSON specs &mdash; no <code>eval()</code> or arbitrary code runs.</li>
           <li><strong>Static site.</strong> This is a static GitHub Pages site with no backend, no cookies, no tracking, and no analytics.</li>
         </ul>
 
-        <h3>Workshop Use</h3>
-        <p style="line-height:1.7; margin:0 0 1rem;">Part of the <a href="https://ui-insight.github.io/REACHWorkshop2026/" target="_blank" style="color:#f1b300; font-weight:700;">REACH 2026 AI4RA Workshop</a>. Facilitators can pre-fill keys by sharing links with <code>?key=YOUR_KEY</code>.</p>
-
         <h3>Open Source</h3>
-        <p style="line-height:1.7; margin:0 0 1rem;"><a href="https://github.com/ui-insight/data-crawler-carl" target="_blank" style="color:#f1b300; font-weight:700;">View on GitHub</a> &mdash; Licensed under the <a href="https://github.com/ui-insight/data-crawler-carl/blob/main/LICENSE" target="_blank" style="color:#f1b300; font-weight:700;">Apache License 2.0</a>. Built with PapaParse, sql.js, Plotly.js, and marked (MIT) and the Google Gen AI SDK (Apache-2.0); see the <a href="https://github.com/ui-insight/data-crawler-carl/blob/main/NOTICE" target="_blank" style="color:#f1b300; font-weight:700;">NOTICE</a> file for full credits.</p>
+        <p style="line-height:1.7; margin:0 0 1rem;"><a href="https://github.com/ui-insight/data-crawler-carl" target="_blank" style="color:#f1b300; font-weight:700;">View on GitHub</a> &mdash; Licensed under the <a href="https://github.com/ui-insight/data-crawler-carl/blob/main/LICENSE" target="_blank" style="color:#f1b300; font-weight:700;">Apache License 2.0</a>. Built with PapaParse, sql.js, Plotly.js, and marked (MIT), the Google Gen AI SDK (Apache-2.0), and the Anthropic TypeScript SDK (Apache-2.0); see the <a href="https://github.com/ui-insight/data-crawler-carl/blob/main/NOTICE" target="_blank" style="color:#f1b300; font-weight:700;">NOTICE</a> file for full credits.</p>
 
         <button class="modal-close-btn" id="about-close">Got it</button>
       </div>

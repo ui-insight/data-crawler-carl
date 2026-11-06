@@ -5,11 +5,11 @@ AI-powered CSV data explorer that runs entirely in your browser. Upload any CSV,
 ## How it works
 
 1. **Upload a CSV** — parsed with PapaParse, loaded into an in-browser SQLite database (sql.js WebAssembly)
-2. **Ask questions** — natural language queries sent to Google Gemini along with your data schema
-3. **Auto-execute SQL** — SQL in Gemini's responses runs against your local database, results shown inline
+2. **Ask questions** — natural language queries sent to the AI provider that issued your key, along with your data schema
+3. **Auto-execute SQL** — SQL in the model's responses runs against your local database, results shown inline
 4. **Safe charts** — Chart specs are parsed as JSON and rendered with Plotly.js (bar/scatter only, no code execution)
 
-No data leaves your browser except the schema sample sent to Gemini for context.
+No data leaves your browser except what is sent to that provider: your questions, the column names, a 5-row sample, and the results of the queries that run.
 
 ## Try it
 
@@ -23,15 +23,20 @@ python3 -m http.server 4173 -d docs
 
 ## API Key
 
-Requires a [Google Gemini API key](https://aistudio.google.com/app/apikey) (free tier works).
+Requires an API key. A [Google Gemini key](https://aistudio.google.com/app/apikey) is the free option: there is no application, and a project with no billing account stays on the free tier, though Google asks for a quick phone check on some projects. On that tier Google may use what you send to improve its products, so don't use sensitive data. The site's **API Key** dialog has the steps. The key's prefix picks the backend, so a key is only sent to the provider that issued it:
 
-Facilitators only: a University of Idaho MindRouter key (prefix `mr2_`) pasted or passed via `?key=...` is routed to the University's own models through the lakehouse proxy instead of Google. The site does not advertise this; mint a workshop-specific MindRouter key and revoke it afterward.
+| Key starts with | Backend | Model (set in `docs/js/api.js`) |
+|---|---|---|
+| `sk-ant-` | Anthropic Claude | `claude-haiku-5-5` |
+| `sk-or-` | OpenRouter | `anthropic/claude-haiku-5.5` |
+| `sk-` (other) | OpenAI | `gpt-6-luna` |
+| anything else | Google Gemini | `gemini-3.5-flash-lite` |
+
+Anthropic, OpenAI, and OpenRouter keys have no free tier for these models: each message is billed to the account that owns the key, so set a spending limit. A Claude or ChatGPT chat subscription does not include API access. OpenRouter forwards requests to the model's own provider, which is Anthropic for the default model.
+
+A University of Idaho MindRouter key (prefix `mr2_`) pasted or passed via `?key=...` is routed to the University's own models through the lakehouse proxy instead. The site does not advertise this; use a dedicated MindRouter key and revoke it when you're done sharing it.
 
 Pass via URL: `?key=YOUR_KEY` (stored in sessionStorage, stripped from URL, cleared on tab close).
-
-## Part of the AI4RA Workshop
-
-Used as an interactive activity in the [REACH 2026 AI4RA Workshop](https://ui-insight.github.io/REACHWorkshop2026/) — Data Lakehouse session.
 
 ## Contributing
 
@@ -54,6 +59,7 @@ The site loads these open source libraries from public CDNs. Each stays under it
 | [Plotly.js](https://github.com/plotly/plotly.js) 2.35.2 | Charts | MIT |
 | [marked](https://github.com/markedjs/marked) | Markdown rendering | MIT |
 | [@google/genai](https://github.com/googleapis/js-genai) | Gemini SDK | Apache-2.0 |
+| [@anthropic-ai/sdk](https://github.com/anthropics/anthropic-sdk-typescript) | Claude SDK | Apache-2.0 |
 
 ## Acknowledgments
 
