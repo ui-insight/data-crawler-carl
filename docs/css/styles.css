@@ -771,12 +771,22 @@ body {
   font-weight: 600;
 }
 
-.api-key-privacy {
-  font-size: 0.82rem;
-  color: var(--muted);
+.api-key-intro {
   line-height: 1.5;
-  margin: 0.5rem 0;
+  margin: 0 0 0.8rem;
 }
+
+/* Let the input shrink so Save stays inside the box on a phone */
+.api-key-row input { min-width: 0; }
+
+/* Dropdown details in the API key dialog */
+.modal-dialog .fine { margin: 0.6rem 0; }
+.modal-dialog .fine summary { cursor: pointer; color: #7a5a00; font-weight: 700; font-size: 0.9rem; }
+.modal-dialog .fine ol,
+.modal-dialog .fine ul { padding-left: 1.2rem; margin: 0.5rem 0; font-size: 0.85rem; line-height: 1.5; color: #333; display: flex; flex-direction: column; gap: 0.3rem; }
+.modal-dialog .fine p { margin: 0.5rem 0; font-size: 0.85rem; line-height: 1.5; color: #333; }
+.modal-dialog .fine a { color: #7a5a00; font-weight: 700; }
+.modal-dialog .fine code { background: rgba(25,25,25,0.06); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
 
 .modal-close-btn {
   display: inline-block;

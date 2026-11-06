@@ -37,7 +37,8 @@
     <!-- API Key Modal -->
     <div id="api-key-modal" class="modal-overlay">
       <div class="modal-dialog">
-        <h2>API Key</h2>
+        <h2>Add an API key</h2>
+        <p class="api-key-intro">Carl asks an AI model your questions, and it needs an API key to do that. Paste a Gemini, OpenAI, Claude or OpenRouter key below.</p>
         <div class="api-key-input-section">
           <div class="api-key-row">
             <input type="password" id="api-key-input" placeholder="Paste your API key here..." />
@@ -45,23 +46,34 @@
           </div>
           <div class="api-key-status" id="api-key-status"></div>
         </div>
-        <h3>How to get a free Gemini API key</h3>
-        <ol>
-          <li>Visit <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> and sign in with your Google account.</li>
-          <li>On a first visit, AI Studio creates a project and a key for you. Otherwise, click <strong>Create API Key</strong> and pick a project with <strong>no billing account attached</strong>.</li>
-          <li>Copy the key and paste it into the field above.</li>
-        </ol>
-        <h3>About the free tier</h3>
-        <ul>
+        <details class="fine">
+          <summary>Don't have one? Get a free Gemini key</summary>
+          <ol>
+            <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> and sign in with your Google account.</li>
+            <li>On a first visit, AI Studio creates a project and a key for you. Otherwise, click <strong>Create API Key</strong> and pick a project with <strong>no billing account attached</strong>.</li>
+            <li>Copy the key and paste it into the field above.</li>
+          </ol>
+          <ul>
           <li><strong>No cost, no credit card, no application.</strong> A project without a billing account stays on the free tier. If you link billing to the project, usage is charged at paid rates.</li>
           <li><strong>You may need to verify.</strong> Google asks for a quick phone check on some free projects, usually additional ones or those created outside AI Studio. If so, Carl shows Google's error with a link: scan the QR code, then try again. See <a href="https://ai.google.dev/gemini-api/docs/verification" target="_blank">Google's verification page</a>.</li>
           <li><strong>Rate limits.</strong> Free keys allow a limited number of requests per minute and per day, and most questions to Carl use two requests. If Carl stops responding, wait a minute and try again. Current limits are on <a href="https://ai.google.dev/gemini-api/docs/rate-limits" target="_blank">Google's rate limits page</a>.</li>
           <li><strong>Your inputs may be reviewed.</strong> On the free tier, Google may use what you send and the responses to improve its products, and human reviewers may read them. That includes your data sample and query results, so do not use sensitive data.</li>
           <li><strong>Who can use it.</strong> Google's terms require users to be 18 or older, and some regions have extra restrictions. See the <a href="https://ai.google.dev/gemini-api/terms" target="_blank">Gemini API terms</a>.</li>
-        </ul>
-        <h3>Using another provider's key</h3>
-        <p>You can also paste an <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI key</a> (starts with <code>sk-</code>), an <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic key</a> (<code>sk-ant-</code>), or an <a href="https://openrouter.ai/keys" target="_blank">OpenRouter key</a> (<code>sk-or-</code>). Carl recognizes the key and sends it only to that company. These are not free: every message is billed to the account that owns the key. A ChatGPT or Claude chat subscription does not include an API key.</p>
-        <p class="api-key-privacy">Your key is stored only in your browser's session memory &mdash; it is never saved to disk or sent anywhere except directly to the provider that issued it. It is cleared when you close the tab.</p>
+          </ul>
+        </details>
+        <details class="fine">
+          <summary>Using another provider's key</summary>
+          <p>You can also paste an <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI key</a> (starts with <code>sk-</code>), an <a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic key</a> (<code>sk-ant-</code>), or an <a href="https://openrouter.ai/keys" target="_blank">OpenRouter key</a> (<code>sk-or-</code>). Carl recognizes the key and sends it only to that company. These are not free: every message is billed to the account that owns the key. A ChatGPT or Claude chat subscription does not include an API key.</p>
+        </details>
+        <details class="fine">
+          <summary>How the key is handled</summary>
+          <ul>
+            <li><strong>Session only.</strong> The key is held in your browser's session memory. It is never saved to disk, and it is cleared when you close the tab or reload the page.</li>
+            <li><strong>Static site.</strong> This page is served as files from GitHub Pages. No server here stores or sees your key.</li>
+            <li><strong>Sent only to the provider that issued it.</strong> The key's prefix picks the provider: <code>sk-ant-</code> goes to Anthropic, <code>sk-or-</code> to OpenRouter, and any other <code>sk-</code> to OpenAI. Any other key is treated as a Google Gemini key and goes to Google.</li>
+            <li><strong>URL stripped.</strong> A key that arrives as <code>?key=</code> is read once and removed from the address bar.</li>
+          </ul>
+        </details>
         <button class="modal-close-btn" id="api-key-close">Done</button>
       </div>
     </div>
